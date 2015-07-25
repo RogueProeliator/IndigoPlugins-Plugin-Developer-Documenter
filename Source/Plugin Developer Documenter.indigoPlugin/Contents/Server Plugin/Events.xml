@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!--
+	Plugin Developer Documenter by RogueProeliator <adam.d.ashe@gmail.com>
+	
+	Events allow you to notify the user/system of something that has happened; this is usually
+	done whenever a state will not be appropriate to use as the source of a trigger. Most plugins
+	do not require events, but are demonstrated here in the "event" that you need it. :-)
+	
+	A few more details are available in the Wiki:
+		http://wiki.indigodomo.com/doku.php?id=indigo_6_documentation:plugin_guide#eventsxml
+-->
+<Events>
+	<SupportURL>http://forums.indigodomo.com/viewtopic.php?f=59&amp;t=14169</SupportURL>
+	<Event id="samplePluginEvent">
+		<Name>Sample Plugin Event</Name>
+	</Event>
+</Events>

@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<!--
+	Plugin Developer Documenter by RogueProeliator <adam.d.ashe@gmail.com>
+	
+	Actions define a way to interact with devices (or the plugin itself) via Indigo. They may be defined with or
+	without a configuration screen; the ConfigUI supports all standard elements as found in the Indigo Plugin
+	Developer's Guide:
+		http://wiki.indigodomo.com/doku.php?id=indigo_6_documentation:plugin_guide
+-->
+<Actions>
+	<SupportURL>http://forums.indigodomo.com/viewforum.php?f=59</SupportURL>
+	<Action id="incrementDeviceState" deviceFilter="self">
+		<Name>Add to Counter</Name>
+		<CallbackMethod>changeCustomDeviceCounterState</CallbackMethod>
+	</Action>
+	<Action id="decrementDeviceState" deviceFilter="self">
+		<Name>Subtract from Counter</Name>
+		<CallbackMethod>changeCustomDeviceCounterState</CallbackMethod>
+	</Action>
+	<Action id="separator1" />
+	<Action id="setCustomDeviceState" deviceFilter="self">
+		<Name>Set Device State</Name>
+		<CallbackMethod>setCustomDeviceState</CallbackMethod>
+		<ConfigUI>
+			<Field id="instructions" type="label">
+				<Label>This action will allow setting the value shown in the state column. The textfield is required; leave blank to show the validation routines.</Label>
+			</Field>
+			<Field id="newStateValue" type="textfield">
+				<Label>Value:</Label>
+			</Field>
+			<Field id="addSymbolToState" type="checkbox">
+				<Label>Add Symbol:</Label>
+			</Field>
+			<Field id="addSymbolDescr" type="label" alignWithControl="true" fontSize="small">
+				<Label>If checked the state will be appended with a degree symbol to show usage of the uiState</Label>
+			</Field>
+		</ConfigUI>
+	</Action>
+</Actions>

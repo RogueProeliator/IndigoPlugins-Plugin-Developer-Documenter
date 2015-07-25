@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	Plugin Developer Documenter by RogueProeliator <adam.d.ashe@gmail.com>
+	
+	The Info.plist document contains the identity of your plugin... highlights include:
+	
+	PluginVersion
+		This setting is used by Indigo to determine if an update is necessary. You should always
+		increment this for every build that you send out. The usage of the versions is up to your
+		own discression - even professional software firms treat versions in different ways!
+	ServerApiVersion
+		Set this to the minimum API version supported by the application. The list of features added
+		for each API may be found in the Wiki: http://wiki.indigodomo.com/doku.php?id=api_version_chart
+	CFBundleDisplayName
+		This is what will be shown as the name of your plugin
+	CFBundleIdentifier
+		This is a unique name (system-wide) for your plugin; it is best to name it according to something
+		such as your name, company, etc. By convention this is in the format of a reverse-url, but that
+		is not a requirement. One set DO NOT CHANGE THIS VALUE or it will appear as a new plugin to both
+		Indigo and users, causing much confusion!
+	CFBundleURLName
+		This URL is where the user will be taken if he/she uses the "About..." menu option found under
+		your plugin's name in the Plugins menu.	
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>PluginVersion</key>
+		<string>1.1.0</string>
+	
+		<key>ServerApiVersion</key>
+		<string>1.11</string>
+	
+		<key>IwsApiVersion</key>
+		<string>1.0.0</string>
+	
+		<key>CFBundleDisplayName</key>
+		<string>Plugin Developer Documenter</string>
+	
+		<key>CFBundleIdentifier</key>
+		<string>com.duncanware.indigoPluginDeveloperDocumenter</string>
+	
+		<key>CFBundleVersion</key>
+		<string>1.0.0</string>
+	
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>http://forums.indigodomo.com/viewtopic.php?f=59&amp;t=14169</string>
+			</dict>
+		</array>
+	</dict>
+</plist>

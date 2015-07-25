@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<!--
+	Plugin Developer Documenter by RogueProeliator <adam.d.ashe@gmail.com>
+	
+	The devices below all demonstrate using the Custom plugin device type; the Indigo
+	SDK has examples for using other device types such as relays, thermostats,
+	sprinklers, etc. More details on all of these areas may be found in the
+	Indigo Plugin Developer's Guide:
+		http://wiki.indigodomo.com/doku.php?id=indigo_6_documentation:plugin_guide
+		
+	Of note, be sure to set a state as the one that you wish to appear in the "State"
+	column in the OS X and mobile clients. The state to display is specified via the
+	UiDisplayStateId node (or may be set from code, see the plugin.py for details)
+-->
+<Devices>
+	<Device type="custom" id="sampleCustomDevice">
+		<Name>Custom Device Documenter</Name>
+		<ConfigUI>
+			<Field id="deviceTitle" type="label" fontColor="darkGray">
+				<Label>SAMPLE CUSTOM DEVICE</Label>
+			</Field>
+			<Field id="titleSeparator" type="separator" />
+			<Field id="description" type="label" fontSize="small">
+				<Label>This sample custom device type shows a ConfigUI sample and documents the callbacks you may receive. It is not an exhaustive demonstration of the ConfigUI, just an overview and sample. See the Wiki for more complete documentation.</Label>
+			</Field>
+			<Field id="callbackBtnEnabler" type="checkbox">
+				<Label>Enable Callback:</Label>
+				<Description>Demonstrates enabling/disabling button below</Description>
+			</Field>
+			<Field id="callbackBtn" type="button" enabledBindingId="callbackBtnEnabler">
+				<Label />
+				<Title>Make Callback</Title>
+				<CallbackMethod>customDeviceConfigCallback</CallbackMethod>
+			</Field>
+			<Field id="customDeviceDynaList" type="menu">
+				<Label>Dynamic List:</Label>
+				<List class="self" filter="" method="getCustomDeviceConfigMenu" />
+			</Field>
+			<Field id="customDeviceDynaListDesc" type="label" alignWithControl="true" fontSize="small">
+				<Label>The above menu was created by a call back to 'getCustomDeviceConfigMenu' in the plugin object.</Label>
+			</Field>
+			<Field id="customDeviceReloadingDynaList" type="menu">
+				<Label>Dynamic Reload List:</Label>
+				<List class="self" filter="" method="getCustomDeviceConfigReloadingMenu" dynamicReload="true" />
+			</Field>
+			<Field id="customDeviceReloadingDynaListDesc" type="label" alignWithControl="true" fontSize="small">
+				<Label>The above dynamic menu is refreshed on any callback - for example, but the button above.</Label>
+			</Field>
+			<Field id="allRelayDevices" type="list">
+				<Label>Relays:</Label>
+				<List class="indigo.devices" filter="indigo.relay" />
+			</Field>
+			<Field id="requiredField" type="checkbox">
+				<Label>Required Field:</Label>
+				<Description>Must be checked to save (see validation in log)</Description>
+			</Field>
+			<Field id="descriptionHiddenFields" type="label" fontSize="small">
+				<Label>Note that fields may be hidden from the user; an 'address' field is hidden but, being in the ConfigUI will generate a property. A property with 'address' as the id will show in the 'Address' column in Indigo's device list.</Label>
+			</Field>
+			<Field id="address" type="textfield" hidden="true">
+				<Label />
+			</Field>
+		</ConfigUI>
+		<UiDisplayStateId>exampleDisplayState</UiDisplayStateId>
+		<States>
+			<State id="exampleDisplayState">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Example Display State Is</TriggerLabel>
+				<ControlPageLabel>Example Display</ControlPageLabel>
+			</State>
+			<State id="exampleNumberState">
+				<ValueType>Number</ValueType>
+				<TriggerLabel>Counter Is</TriggerLabel>
+				<ControlPageLabel>Counter</ControlPageLabel>
+			</State>
+		</States>
+	</Device>
+</Devices>

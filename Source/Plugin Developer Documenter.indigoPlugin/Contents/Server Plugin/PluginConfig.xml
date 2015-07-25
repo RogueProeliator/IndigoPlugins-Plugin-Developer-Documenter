@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<!--
+	Plugin Developer Documenter by RogueProeliator <adam.d.ashe@gmail.com>
+	
+	The PluginConfig.xml document allows you to define various configuration properties for your
+	plugin; these should be items that are plugin-wide and not specific to a device. Examples
+	include whether or not debugging is turned on, any update checks that you may do, etc.
+	
+	Please see the Indigo Plugin Developer's Guide for more discussion and information on the
+	various fields that are available:
+		http://wiki.indigodomo.com/doku.php?id=indigo_6_documentation:plugin_guide
+  -->
+<PluginConfig>
+	<Field id="instructions" type="label">
+		<Label>This plugin can generate an incredible amount of data to the log; you may wish to reduce this to a reasonable amount by controlling what is logged below.</Label>
+	</Field>
+	<Field id="logMethodParams" type="checkbox">
+		<Label>Log Method Param Values:</Label>
+	</Field>
+	<Field id="registerForDevicesChanges" type="checkbox">
+		<Label>Log All Device Changes:</Label>
+		<Description>(all device changes, not just those from the plugin)</Description>
+	</Field>
+	<Field id="registerForVariableChanges" type="checkbox">
+		<Label>Log Variable Changes:</Label>
+	</Field>
+	<Field id="registerForActionGroupChanges" type="checkbox">
+		<Label>Log Action Group Changes:</Label>
+	</Field>
+	<Field id="registerForControlPageChanges" type="checkbox">
+		<Label>Log Control Page Changes:</Label>
+	</Field>
+	<Field id="registerForScheduleChanges" type="checkbox">
+		<Label>Log Schedule Changes:</Label>
+	</Field>
+	<Field id="registerForChangesInstr" type="label" fontSize="small" fontColor="gray">
+		<Label>To turn off any of the above Log for Changes you must restart the plugin after unchecking and saving; the plugin is not able to automatically "unregister" without a restart.</Label>
+	</Field>
+</PluginConfig>

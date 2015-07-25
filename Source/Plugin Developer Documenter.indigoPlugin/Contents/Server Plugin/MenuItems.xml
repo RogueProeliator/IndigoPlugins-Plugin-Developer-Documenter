@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<!-- 
+	Plugin Developer Documenter by RogueProeliator <adam.d.ashe@gmail.com>
+	
+	Any menu items defined below will show up under the Plugins -> {Your Plugin Name} menu
+	in the Indigo OS X Client. These menu items may define an optional ConfigUI which is
+	shown to the user or, if none is present, will call the CallbackMethod immediately
+	without any feedback to the user.
+	
+	You may show a separator line within the menu by specifying the type attribute as
+	"separator", as shown below.
+	
+	For more detailed information about the file and options available for displaying a
+	GUI, see the Indigo Plugin Developer's Guide:
+		http://wiki.indigodomo.com/doku.php?id=indigo_6_documentation:plugin_guide
+-->
+<MenuItems>
+	<MenuItem id="customMenuItem1">
+		<Name>Custom Item - No UI</Name>
+		<CallbackMethod>customMenuItem1Executed</CallbackMethod>
+	</MenuItem>
+	<MenuItem id="triggerEventMenuItem">
+		<Name>Trigger Custom Event</Name>
+		<CallbackMethod>triggerEventFromMenu</CallbackMethod>
+	</MenuItem>
+	<MenuItem id="separator1" type="separator" />
+	<MenuItem id="customMenuItem2">
+		<Name>Custom Item - Shows UI</Name>
+		<CallbackMethod>customMenuItem2Executed</CallbackMethod>
+		<ButtonTitle>Go</ButtonTitle>
+		<ConfigUI>
+			<Field id="instructions" type="label">
+				<Label>This may be any standard Config UI. Note the call to execute the action is slightly different and occurs upon hitting the run button, whose title has been customized in this instance.</Label>
+			</Field>
+		</ConfigUI>
+	</MenuItem>
+</MenuItems>
