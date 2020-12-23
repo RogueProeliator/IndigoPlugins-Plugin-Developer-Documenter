@@ -28,8 +28,8 @@
 # in your python directory and do not need to install/copy it
 import indigo
 
-# any standard python includes from 2.5 (pre Indigo Server v6.1) or 2.6 (Indigo Server v6.1 and later)
-# may be pulled in; in addition you may include other modules in your plugin's bundle and import here
+# any standard python includes from 2.7 may be pulled in; in addition you may include 
+# other modules in your plugin's bundle and import here.
 import inspect
 import os
 import Queue
@@ -60,7 +60,7 @@ class Plugin(indigo.PluginBase):
 		super(Plugin, self).__init__(pluginId, pluginDisplayName, pluginVersion, pluginPrefs)
 
 		# you may do whatever you want to here with your variables; in this example we do not
-		# need many, but you may with to create a dictionary of indigo devices, create extra
+		# need many, but you may wish to create a dictionary of indigo devices, create extra
 		# settings, keep track of states, etc.
 		self.logMethodParams = pluginPrefs.get("logMethodParams", False)
 		
@@ -77,10 +77,17 @@ class Plugin(indigo.PluginBase):
 		# import Queue
 		self.commandQueue = Queue.Queue()
 		
-		# if you plan to use the built-in debug logging (you should!) then set this variable;
-		# anything calling to self.debugLogWithLineNum() will be output ONLY IF this variable is true. In
-		# practice this should be user-settable, often in the plugin configuration dialog
-		self.debug = True
+		# Indigo Plugins use standard Python based logging and provide a default instance
+		# available to the plugin via the self.logger property
+		# Examples (all standard Python logging calls):
+		#	self.logger.debug(u'My debug message')
+		#	self.logger.info(u'My informational message')
+		#	self.logger.warn(u'Warn the user!')
+		#
+		# Indigo includes a new logging level called THREADDEBUG (logger level 5) that,
+		# by default, logs to a plugin-specific file that is not normally sent to the
+		# Indigo Log:
+		self.logger.threaddebug(u'A ton of logging information here that might be used for debugging by the developer!')
 		self.debugLogWithLineNum(u'Called __init__(self, pluginId, pluginDisplayName, pluginVersion, pluginPrefs):')
 		if self.logMethodParams == True:
 			self.debugLogWithLineNum(u'     ("' + pluginId + u'", "' + pluginDisplayName + u'", "' + pluginVersion + u'", ' + unicode(pluginPrefs) + u')')
@@ -197,7 +204,7 @@ class Plugin(indigo.PluginBase):
 	#/////////////////////////////////////////////////////////////////////////////////////
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine returns the dictionary of device types for the plugin; you should not
-	# need to override this unless perhaps creating device types at runtime
+	# need to override this unless perhaps creating device types at runtime (uncommon)
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def getDevicesDict(self):
 		self.debugLogWithLineNum(u'Called getDevicesDict(self):')
@@ -391,6 +398,7 @@ class Plugin(indigo.PluginBase):
 		if self.logMethodParams == True:
 			self.debugLogWithLineNum(u'     (' + unicode(valuesDict) + u', ' + unicode(typeId) + u', ' + unicode(devId) + u')')
 		
+		# If validation fails, return False and an error dictionary such as:
 		# errorMsgDict = indigo.Dict()
 		# errorMsgDict[u"someUiFieldId"] = u"sorry but you MUST check this checkbox!"
 		# return (False, valuesDict, errorMsgDict)
@@ -435,6 +443,10 @@ class Plugin(indigo.PluginBase):
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine will run a concurrent processing thread used at the plugin (not
 	# device) level to keep the GUI clear of blocking calls
+	#
+	# NOTE: This represents just one implementation pattern/example utilizing a queue to
+	# handle all plugin commands. Your plugin may need individual threads per device, no
+	# background thread at all, or a combination of the two.
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def runConcurrentThread(self):
 		try:
@@ -502,7 +514,10 @@ class Plugin(indigo.PluginBase):
 
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# shutdown is called by Indigo whenever the entire plugin is being shut down from
-	# being disabled, during an update process or if the server is being shut down
+	# being disabled, during an update process or if the server is being shut down.
+	#
+	# NOTE: This should return very quickly as it indicates the server is attempting to
+	# stop the plugin and it may get killed if it takes too long to exit
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def shutdown(self):
 		self.debugLogWithLineNum(u'Called shutdown(self):')
@@ -646,7 +661,7 @@ class Plugin(indigo.PluginBase):
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def customMenuItem1Executed(self):
 		self.debugLogWithLineNum(u'Called customMenuItem1Executed(self):')
-		self.commandQueue.put((u'Queued action from customMenuItem1Executed', 0));
+		self.commandQueue.put((u'Queued action from customMenuItem1Executed', 0))
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This callback originates from the menu item that should trigger the custom event
@@ -657,7 +672,7 @@ class Plugin(indigo.PluginBase):
 		if 'samplePluginEvent' in self.indigoEvents:
 			for trigger in self.indigoEvents['samplePluginEvent'].values():
 				indigo.trigger.execute(trigger)
-				
+
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This callback originates from the menu item with a UI
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -672,7 +687,7 @@ class Plugin(indigo.PluginBase):
 		# return (False, valuesDict, errorsDict)
 		
 		# queue up an action as a demonstration
-		self.commandQueue.put((u'Queued action from customMenuItem2Executed', 0));
+		self.commandQueue.put((u'Queued action from customMenuItem2Executed', 0))
 		
 		return (True, valuesDict)
 		
@@ -685,6 +700,17 @@ class Plugin(indigo.PluginBase):
 			self.debugLogWithLineNum(u'   (' + unicode(action) + u')')
 		self.commandQueue.put((action.pluginTypeId, action.deviceId))
 		
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	# Called whenever the user has submitted a custom message to be broadcast to all
+	# subscribing plugins
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	def sendIntraPluginBroadcast(self, valuesDict, typeId):
+		self.debugLogWithLineNum(u'Called sendIntraPluginBroadcast(self, valuesDict, typeId):')
+		if self.logMethodParams == True:
+			self.debugLogWithLineNum(u'   (' + unicode(valuesDict) + u', ' + unicode(typeId) + u')')
+
+		indigo.server.broadcastToSubscribers(valuesDict.get(u'message', u''))
+
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine is set to handle the Set Custom Device State action via the Actions.xml
@@ -867,9 +893,16 @@ class Plugin(indigo.PluginBase):
 		if self.logMethodParams == True:
 			self.debugLogWithLineNum(u'   (' + unicode(var) + u')')
 			
+
+	#/////////////////////////////////////////////////////////////////////////////////////
+	# Broadcast (Publish) and Subscribe
+	#	These routines allow your program to "publish" information that may be consumed
+	#	by other programs which subscribe to broadcasts (or allow you to be the consumer!)
+	# /////////////////////////////////////////////////////////////////////////////////////
+
 		
 	#/////////////////////////////////////////////////////////////////////////////////////
 	# Utility Routines
 	#/////////////////////////////////////////////////////////////////////////////////////
 	def debugLogWithLineNum(self, message):
-		self.debugLog(u'[' + unicode(inspect.currentframe().f_back.f_lineno) + '] ' + message)
+		self.logger.debug(u'[' + unicode(inspect.currentframe().f_back.f_lineno) + '] ' + message)
