@@ -23,6 +23,17 @@
 		<Name>Trigger Custom Event</Name>
 		<CallbackMethod>triggerEventFromMenu</CallbackMethod>
 	</MenuItem>
+	<MenuItem id="sendBroadcast">
+		<Name>Send a Broadcast to Subscribers</Name>
+		<CallbackMethod>sendIntraPluginBroadcast</CallbackMethod>
+		<ConfigUI>
+			<Field id="instructions" type="label">
+				<Label>Enter the message that will be broadcast to plugins which subscribe to our messages</Label>
+			</Field>
+			<Field id="message" type="textfield">
+				<Label>Message</Label>
+			</Field>
+		</ConfigUI>
 	<MenuItem id="separator1" type="separator" />
 	<MenuItem id="customMenuItem2">
 		<Name>Custom Item - Shows UI</Name>
