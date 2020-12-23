@@ -31,6 +31,7 @@ import indigo
 # any standard python includes from 2.7 may be pulled in; in addition you may include 
 # other modules in your plugin's bundle and import here.
 import inspect
+import logging
 import os
 import Queue
 import sys
@@ -65,7 +66,7 @@ class Plugin(indigo.PluginBase):
 		self.logMethodParams = pluginPrefs.get("logMethodParams", False)
 		
 		# if the plugin defines Events to send, create a data store for them now so
-		# that we can later trigger when necessary; this is not all too common
+		# that we can later trigger when necessary; this is not very common
 		self.indigoEvents = dict()
 		
 		# this plugin uses a Queue to communicate with the background thread, passing actions
@@ -87,13 +88,14 @@ class Plugin(indigo.PluginBase):
 		# Indigo includes a new logging level called THREADDEBUG (logger level 5) that,
 		# by default, logs to a plugin-specific file that is not normally sent to the
 		# Indigo Log:
+		self.indigo_log_handler.setLevel(logging.DEBUG)
 		self.logger.threaddebug(u'A ton of logging information here that might be used for debugging by the developer!')
 		self.debugLogWithLineNum(u'Called __init__(self, pluginId, pluginDisplayName, pluginVersion, pluginPrefs):')
 		if self.logMethodParams == True:
 			self.debugLogWithLineNum(u'     ("' + pluginId + u'", "' + pluginDisplayName + u'", "' + pluginVersion + u'", ' + unicode(pluginPrefs) + u')')
 
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-	# Destructor that normally need not do anything...
+	# Destructor... normally need not do anything here...
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def __del__(self):
 		indigo.PluginBase.__del__(self)
@@ -122,6 +124,15 @@ class Plugin(indigo.PluginBase):
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def getPrefsConfigUiValues(self):
 		self.debugLogWithLineNum(u'Called getPrefsConfigUiValues(self):')
+
+		# example for customizing or setting default values...
+		# valuesDict = self.pluginPrefs
+		# errorMsgDict = indigo.Dict()
+		# if not u'myProperty' in valuesDict:
+		#	valuesDict[u'myProperty'] = u''
+		# return (valuesDict, errorMsgDict)
+
+		# returning the default handler as if this plugin had not overridden the routine
 		return super(Plugin, self).getPrefsConfigUiValues()
 
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -184,7 +195,15 @@ class Plugin(indigo.PluginBase):
 		self.debugLogWithLineNum(u'Called getMenuActionConfigUiXml(self, menuId):')
 		if self.logMethodParams == True:
 			self.debugLogWithLineNum(u'     (' + unicode(menuId) + u')')
-		return super(Plugin, self).getMenuActionConfigUiXml(menuId)
+
+		if menuId == u'dynamicUIDemonstration':
+			self.logger.debug(u'Providing dynamic ConfigUI for menu item')
+			customConfigUI = u'<?xml version="1.0" encoding="UTF-8"?><ConfigUI><Field id="example" type="label"><Label>This UI was dynamically created, not read through the MenuItems.xml file in the plugin.</Label></Field></ConfigUI>'
+			self.logger.info(customConfigUI)
+			return customConfigUI
+		else:
+			self.logger.info(super(Plugin, self).getMenuActionConfigUiXml(menuId))
+			return super(Plugin, self).getMenuActionConfigUiXml(menuId)
 
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine returns the initial values for the menu action config dialog, if you

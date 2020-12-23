@@ -15,10 +15,26 @@
 		http://wiki.indigodomo.com/doku.php?id=indigo_6_documentation:plugin_guide
 -->
 <MenuItems>
+	<MenuItem id="uiDemonstration">
+		<Name>UI Components Example</Name>
+		<CallbackMethod>customMenuItem2Executed</CallbackMethod>
+		<ButtonTitle>Go</ButtonTitle>
+		<ConfigUI>
+			<Field id="instructions" type="label">
+				<Label>This may be any standard Config UI. Note the call to execute the action is slightly different and occurs upon hitting the run button, whose title has been customized in this instance.</Label>
+			</Field>
+		</ConfigUI>
+	</MenuItem>
 	<MenuItem id="customMenuItem1">
-		<Name>Custom Item - No UI</Name>
+		<Name>Execute Action Without UI</Name>
 		<CallbackMethod>customMenuItem1Executed</CallbackMethod>
 	</MenuItem>
+	<MenuItem id="dynamicUIDemonstration">
+		<Name>Dynamic UI Example</Name>
+		<ConfigUI></ConfigUI>
+	</MenuItem>
+	
+	<MenuItem id="separator1" type="separator" />
 	<MenuItem id="triggerEventMenuItem">
 		<Name>Trigger Custom Event</Name>
 		<CallbackMethod>triggerEventFromMenu</CallbackMethod>
@@ -32,16 +48,6 @@
 			</Field>
 			<Field id="message" type="textfield">
 				<Label>Message</Label>
-			</Field>
-		</ConfigUI>
-	<MenuItem id="separator1" type="separator" />
-	<MenuItem id="customMenuItem2">
-		<Name>Custom Item - Shows UI</Name>
-		<CallbackMethod>customMenuItem2Executed</CallbackMethod>
-		<ButtonTitle>Go</ButtonTitle>
-		<ConfigUI>
-			<Field id="instructions" type="label">
-				<Label>This may be any standard Config UI. Note the call to execute the action is slightly different and occurs upon hitting the run button, whose title has been customized in this instance.</Label>
 			</Field>
 		</ConfigUI>
 	</MenuItem>
