@@ -261,7 +261,9 @@ class Plugin(indigo.PluginBase):
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine is called in order to obtain the XML to be used for the device config
-	# UI dialog; normally the base class simply returns the ConfigUI from Devices.xml
+	# UI dialog; normally the base class simply returns the ConfigUI from Devices.xml.
+	# See the Menu Item equivalent, getMenuActionConfigUiXml, for an example of customizing
+	# this return
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def getDeviceConfigUiXml(self, typeId, devId):
 		self.debugLogWithLineNum(u'Called getDeviceConfigUiXml(self, typeId, devId):')
@@ -315,11 +317,21 @@ class Plugin(indigo.PluginBase):
 	# to override (return True/False) if the device must stop/restart communication after
 	# a property change. If True is returned the deviceStopComm / deviceStartComm are
 	# called to pick up the change. By default ALL properties are considered comm related!
+	#
+	# Some plugin developers customize this if properties are supported that control the
+	# plugin irrespective of the communication. For example, the format for a state is
+	# changed that will be utilized in the next update -- there is no need to restart the
+	# device's connection
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def didDeviceCommPropertyChange(self, origDev, newDev):
 		self.debugLogWithLineNum(u'Called didDeviceCommPropertyChange(self, origDev, newDev):')
 		if self.logMethodParams == True:
 			self.debugLogWithLineNum(u'     (' + unicode(origDev) + u', ' + unicode(newDev) + u')')
+
+		# example of customizing the call:
+		# if origDev.pluginProps.get('ipAddress', '') != newDev.pluginProps.get('ipAddress', ''):
+		# 	return True
+		# return False
 		return super(Plugin, self).didDeviceCommPropertyChange(origDev, newDev)
 		
 		
@@ -327,7 +339,9 @@ class Plugin(indigo.PluginBase):
 	# Device Factory Configuration Routines
 	#/////////////////////////////////////////////////////////////////////////////////////
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-	# This routine is called in order to obtain the XML to be used for the factory
+	# This routine is called in order to obtain the XML to be used for the factory; this
+	# is uncommon to override, but see the getMenuActionConfigUiXml routine for an
+	# example of customizing the UI at runtime
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def getDeviceFactoryUiXml(self):
 		self.debugLogWithLineNum(u'Called getDeviceFactoryUiXml(self):')
@@ -390,7 +404,8 @@ class Plugin(indigo.PluginBase):
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine returns the configuration XML for the given action; normally this is
-	# pulled from the Actions.xml file definition and you need not override it
+	# pulled from the Actions.xml file definition and you need not override it. See
+	# getMenuActionConfigUiXml for an example of overriding the XML returned
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def getActionConfigUiXml(self, typeId, devId):
 		self.debugLogWithLineNum(u'Called getActionConfigUiXml(self, typeId, devId):')
@@ -472,7 +487,7 @@ class Plugin(indigo.PluginBase):
 			# this will create an infinite loop which exits via exception or you could
 			# implement your own method/scheme to exit
 			while True:
-				# here you can poll for information, await commands send in via a queue
+				# here you can poll for information, await commands sent in via a queue
 				# from callbacks to your plugin or whatever your particular plugin needs.
 				# we will process items found in the command queue
 				while not self.commandQueue.empty():
@@ -516,12 +531,15 @@ class Plugin(indigo.PluginBase):
 				# the queue is now empty... you need to sleep on each iteration lest you eat up all
 				# of the CPU cycles on the server! this custom sleep command may be interrupted and
 				# is provided on the plugin base class; parameter is in seconds. If you want to
-				# explore queueing up commands to see how it works "stacked up", increase this to, say,
-				# 10 seconds
+				# explore queueing up commands to see how it works "stacked up", increase this time to
+				# a larger number of seconds
+				#
+				# NOTE: prefer this sleep method over the default Python thread sleep call as it has
+				# proper interrupts in place
 				self.sleep(0.5)
 				
 		except self.StopThread:
-			# if needed you could do any cleanup here, or could exit via another flag
+			# if needed, you could do any cleanup here, or could exit via another flag
 			# or command from your plugin
 			pass
 		except:
@@ -535,8 +553,8 @@ class Plugin(indigo.PluginBase):
 	# shutdown is called by Indigo whenever the entire plugin is being shut down from
 	# being disabled, during an update process or if the server is being shut down.
 	#
-	# NOTE: This should return very quickly as it indicates the server is attempting to
-	# stop the plugin and it may get killed if it takes too long to exit
+	# NOTE: This should return very quickly as this call indicates the server is 
+	# attempting to stop the plugin and it may get killed if it takes too long to exit
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def shutdown(self):
 		self.debugLogWithLineNum(u'Called shutdown(self):')
@@ -673,7 +691,8 @@ class Plugin(indigo.PluginBase):
 	#	These routines are all examples of callbacks that the plugin has defined and set
 	#	as callbacks for menu items and buttons on config forms, actions, menu items, etc.
 	#	Each plugin will be different, these are just examples to show the lifecycle calls
-	#	and examples.
+	#	and examples.  The names can generally be anything you like (within valid Python
+	#   rules) as they are specified in the appropriate XML
 	#/////////////////////////////////////////////////////////////////////////////////////
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This callback originates from the menu item without a UI
@@ -729,7 +748,6 @@ class Plugin(indigo.PluginBase):
 			self.debugLogWithLineNum(u'   (' + unicode(valuesDict) + u', ' + unicode(typeId) + u')')
 
 		indigo.server.broadcastToSubscribers(valuesDict.get(u'message', u''))
-
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine is set to handle the Set Custom Device State action via the Actions.xml
@@ -781,7 +799,11 @@ class Plugin(indigo.PluginBase):
 	# Schedule Lifecycle Events
 	#	These routines are called to allow the plugin to react, if necessary, to any
 	#	schedule lifecycle events; they will not be associated with this plugin and 
-	#	generally are not necessary to have in your plugin
+	#	generally are not necessary to have in your plugin. 
+	#
+	#   Note that schedules are not fully supported in the IOM, but this could potentially
+	#   be used by a plugin that does backups or synchronizations or relies on a specific
+	#   schedule to be run, etc.
 	#
 	#	To receive these callbacks, your plugin will need to call:
 	#		indigo.schedules.subscribeToChanges()
@@ -813,9 +835,13 @@ class Plugin(indigo.PluginBase):
 	
 	#/////////////////////////////////////////////////////////////////////////////////////
 	# Action Group Lifecycle Events
-	# These routines are called to allow the plugin to react, if necessary, to any
+	#	These routines are called to allow the plugin to react, if necessary, to any
 	#	action group lifecycle events; they will not be associated with this plugin and 
 	#	generally are not necessary to have in your plugin
+	#
+	# 	Note that action groups are not fully supported in the IOM, but this could potentially
+	#   be used by a plugin that does backups or synchronizations or relies on a specific
+	#   action group to be run, etc. 
 	#
 	#	To receive these callbacks your plugin will need to call:
 	#		indigo.actionGroups.subscribeToChanges()
@@ -850,6 +876,9 @@ class Plugin(indigo.PluginBase):
 	#	These routines are called to allow the plugin to react, if necessary, to any
 	#	control page lifecycle events; they will not be associated with this plugin and 
 	#	generally are not necessary to have in your plugin 
+	#
+	# 	Note that control pages are not fully supported in the IOM, but this could potentially
+	#   be used by a plugin that does backups or synchronizations, for example.
 	#
 	#	To receive these callbacks your plugin will need to call:
 	#		indigo.controlPages.subscribeToChanges()
@@ -918,6 +947,16 @@ class Plugin(indigo.PluginBase):
 	#	These routines allow your program to "publish" information that may be consumed
 	#	by other programs which subscribe to broadcasts (or allow you to be the consumer!)
 	# /////////////////////////////////////////////////////////////////////////////////////
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	# This routine is named whatever you like and is called when a plugin to which you
+	# have subscribed published information. You need to subscribe to a broadcast with
+	# a call:
+	#	indigo.server.subscribeToBroadcast('other.plugin.id', u'broadcastKey', 'functionname')
+	# In this case:
+	#	indigo.server.subscribeToBroadcast('plugin.example.com', u'dataRecv', 'receivedOtherPluginPublish')
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	def receivedOtherPluginPublish(self, arg):
+		self.logger.debug(u'Received publish from a plugin subscribed to: ' + unicode(arg))
 
 		
 	#/////////////////////////////////////////////////////////////////////////////////////
