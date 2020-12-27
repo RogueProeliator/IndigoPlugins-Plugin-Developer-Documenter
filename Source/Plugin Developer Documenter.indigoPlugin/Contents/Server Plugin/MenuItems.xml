@@ -17,8 +17,6 @@
 <MenuItems>
 	<MenuItem id="uiDemonstration">
 		<Name>UI Components Example - Labels</Name>
-		<CallbackMethod>customMenuItem2Executed</CallbackMethod>
-		<ButtonTitle>Go</ButtonTitle>
 		<ConfigUI>
 			<Field id="labelAppearanceSelect" type="menu" defaultValue="size">
 				<Label>Label Attribute:</Label>
@@ -127,6 +125,39 @@
 			<Field id="txtHidden" type="textfield" visibleBindingId="chkEnableDisable" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
 				<Label>Hidden Binding:</Label>
 			</Field>
+		</ConfigUI>
+	</MenuItem>
+	<MenuItem id="uiListsExample">
+		<Name>UI Components Example - Lists and Menus</Name>
+		<ConfigUI>
+			<Field id="listsHeader" type="label">
+				<Label>NOTE: These examples will utilize popup menus as examples to save dialog space; however, most concepts apply directly to lists as well.</Label>
+			</Field>
+			<Field id="standardPopup" type="menu">
+				<Label>Standard Menu:</Label>
+				<List>
+					<Option value="option1">First Option</Option>
+					<Option value="option2">Second Option</Option>
+					<Option value="option3">Third Option</Option>
+				</List>
+			</Field>
+			<Field id="dynamicPopup" type="menu">
+				<Label>Dynamic Menu (Dimmers):</Label>
+				<List class="indigo.devices" filter="indigo.dimmer,indigo.insteon"/>
+			</Field>
+			<Field id="dynamicCustomPopup" type="menu">
+				<Label>Dynamic Menu by Plugin:</Label>
+				<List class="self" filter="stuff" method="dynamicPopupListExample"/>
+			</Field>
+			<Field id="dynamicReloadPopup" type="menu">
+				<Label>Dynamic Reload Menu by Plugin:</Label>
+				<List class="self" filter="stuff" method="dynamicPopupListReloadExample" dynamicReload="true"/>
+			</Field>
+			<Field id="dynamicReloadBtn" type="button">
+				<Title>Reload Menu</Title>
+				<CallbackMethod>dynamicPopupListForceReload</CallbackMethod>
+			</Field>
+			<Field id="dynamicReloadCurr" type="textfield" hidden="true" defaultValue="1" />
 		</ConfigUI>
 	</MenuItem>
 	<MenuItem id="customMenuItem1">

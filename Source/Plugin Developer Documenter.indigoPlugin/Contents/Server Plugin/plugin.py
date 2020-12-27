@@ -806,7 +806,44 @@ class Plugin(indigo.PluginBase):
 		broadcastKey = valuesDict.get(u'broadcastKey')
 		indigo.server.subscribeToBroadcast(pluginId, broadcastKey, 'receivedOtherPluginPublish')
 
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	# Called by the "UI Components Example - Lists and Menus" dialog to build a menu
+	# for a popup list
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	def dynamicPopupListExample(self, filter="", valuesDict=None, typeId="", targetId=0):
+		self.debugLogWithLineNum(u'Called dynamicPopupListExample(self, filter, valuesDict, typeId, targetId):')
+		if self.logMethodParams == True:
+			self.debugLogWithLineNum(u'   (' + unicode(filter) + u', ' + unicode(valuesDict) + u', ' + unicode(typeId) + u', ' + unicode(targetId) + u')')
+		listOptions = [("option1", "First Option"),("option2","Second Option"),("option3","Third Option")]
+		return listOptions
+
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	# Called by the "UI Components Example - Lists and Menus" dialog in order to force a
+	# reload of the dynamic menu
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	def dynamicPopupListForceReload(self, valuesDict=None, typeId='', devId=0):
+		self.debugLogWithLineNum(u'Called dynamicPopupListForceReload(self, valuesDict, typeId, devId):')
+		maxListItem = int(valuesDict.get(u'dynamicReloadCurr', '1'))
+		maxListItem = maxListItem + 1
+		valuesDict[u'dynamicReloadCurr'] = maxListItem
+		return valuesDict
+
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	# Called by the "UI Components Example - Lists and Menus" dialog to build a menu
+	# for a popup list that updates each time
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	def dynamicPopupListReloadExample(self, filter="", valuesDict=None, typeId="", targetId=0):
+		self.debugLogWithLineNum(u'Called dynamicPopupListReloadExample(self, filter, valuesDict, typeId, targetId):')
+		if self.logMethodParams == True:
+			self.debugLogWithLineNum(u'   (' + unicode(filter) + u', ' + unicode(valuesDict) + u', ' + unicode(typeId) + u', ' + unicode(targetId) + u')')
 		
+		maxListItem = int(valuesDict.get(u'dynamicReloadCurr', '1'))
+		listOptions = []
+		for x in range(1,maxListItem):
+			listOptions.append((u'option{0}'.format(x), u'List Option {0}'.format(x)))
+		return listOptions
+
+
 	#/////////////////////////////////////////////////////////////////////////////////////
 	# Schedule Lifecycle Events
 	#	These routines are called to allow the plugin to react, if necessary, to any
