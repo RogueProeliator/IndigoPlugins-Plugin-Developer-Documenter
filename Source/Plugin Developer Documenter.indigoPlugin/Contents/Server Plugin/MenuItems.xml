@@ -100,6 +100,35 @@
 			<Field id="chkDisable" type="checkbox" hidden="true" />
 		</ConfigUI>
 	</MenuItem>
+	<MenuItem id="textFieldDemo">
+		<Name>UI Components Example - Text Field</Name>
+		<ConfigUI>
+			<Field id="enabledTitle" type="label">
+				<Label>Enabled Bindings</Label>
+			</Field>
+			<Field id="enabledSeparator" type="separator" />
+			<Field id="headingSpacer" type="label" fontSize="mini">
+				<Label></Label>
+			</Field>
+
+			<Field id="chkEnableDisable" type="checkbox">
+				<Label>Bound Source:</Label>
+				<Description>Check = Enabled, Unchecked = Disabled</Description>
+			</Field>
+			<Field id="txtEnabled" type="textfield" enabledBindingId="chkEnableDisable" tooltip="Tooltips sometimes only show for disabled boxes">
+				<Label>Standard Binding:</Label>
+			</Field>
+			<Field id="txtEnabledHint" type="label" fontSize="small" alignWithControl="true">
+				<Label>NOTE: the above textbox shows a tooltip...</Label>
+			</Field>
+			<Field id="txtEnabledNeg" type="textfield" enabledBindingId="chkEnableDisable" enabledBindingNegate="true">
+				<Label>Inverse Binding:</Label>
+			</Field>
+			<Field id="txtHidden" type="textfield" visibleBindingId="chkEnableDisable" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+				<Label>Hidden Binding:</Label>
+			</Field>
+		</ConfigUI>
+	</MenuItem>
 	<MenuItem id="customMenuItem1">
 		<Name>Execute Action Without UI</Name>
 		<CallbackMethod>customMenuItem1Executed</CallbackMethod>
