@@ -202,7 +202,6 @@ class Plugin(indigo.PluginBase):
 			self.logger.info(customConfigUI)
 			return customConfigUI
 		else:
-			self.logger.info(super(Plugin, self).getMenuActionConfigUiXml(menuId))
 			return super(Plugin, self).getMenuActionConfigUiXml(menuId)
 
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -794,6 +793,19 @@ class Plugin(indigo.PluginBase):
 		optionsArray = [("option3", "Dyna First Option"),("option4","Dyna Second Option")]
 		return optionsArray
 		
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	# Called in response to the user entering a plugin and action ID to which this
+	# plugin should subscribe
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	def subscribeToPluginBroadcast(self, valuesDict, typeId):
+		self.debugLogWithLineNum(u'Called subscribeToPluginBroadcast from menu item')
+		if self.logMethodParams == True:
+			self.debugLogWithLineNum(u'   (' + unicode(valuesDict) + u', ' + unicode(typeId) + u')')
+		
+		pluginId = valuesDict.get(u'pluginId')
+		broadcastKey = valuesDict.get(u'broadcastKey')
+		indigo.server.subscribeToBroadcast(pluginId, broadcastKey, 'receivedOtherPluginPublish')
+
 		
 	#/////////////////////////////////////////////////////////////////////////////////////
 	# Schedule Lifecycle Events
@@ -956,7 +968,7 @@ class Plugin(indigo.PluginBase):
 	#	indigo.server.subscribeToBroadcast('plugin.example.com', u'dataRecv', 'receivedOtherPluginPublish')
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def receivedOtherPluginPublish(self, arg):
-		self.logger.debug(u'Received publish from a plugin subscribed to: ' + unicode(arg))
+		self.logger.debug(u'Received publish from a subscribed plugin: ' + unicode(arg))
 
 		
 	#/////////////////////////////////////////////////////////////////////////////////////

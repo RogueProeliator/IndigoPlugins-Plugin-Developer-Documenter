@@ -16,13 +16,88 @@
 -->
 <MenuItems>
 	<MenuItem id="uiDemonstration">
-		<Name>UI Components Example</Name>
+		<Name>UI Components Example - Labels</Name>
 		<CallbackMethod>customMenuItem2Executed</CallbackMethod>
 		<ButtonTitle>Go</ButtonTitle>
 		<ConfigUI>
-			<Field id="instructions" type="label">
-				<Label>This may be any standard Config UI. Note the call to execute the action is slightly different and occurs upon hitting the run button, whose title has been customized in this instance.</Label>
+			<Field id="labelAppearanceSelect" type="menu" defaultValue="size">
+				<Label>Label Attribute:</Label>
+				<List>
+					<Option value="align">Alignment</Option>
+					<Option value="color">Color</Option>
+					<Option value="size">Size</Option>
+				</List>
 			</Field>
+			<Field id="headingSpacer" type="label" fontSize="mini">
+				<Label></Label>
+			</Field>
+
+			<Field id="labelAlignTitle" type="label" visibleBindingId="labelAppearanceSelect" visibleBindingValue="align">
+				<Label>Label Alignment</Label>
+			</Field>
+			<Field id="labelSizesTitle" type="label" visibleBindingId="labelAppearanceSelect" visibleBindingValue="size">
+				<Label>Label Sizes</Label>
+			</Field>
+			<Field id="labelColorsTitle" type="label" visibleBindingId="labelAppearanceSelect" visibleBindingValue="color">
+				<Label>Label Text Colors</Label>
+			</Field>
+			<Field id="headingSeparator" type="separator" />
+
+			<Field id="alignDesc" type="label" fontSize="small" visibleBindingId="labelAppearanceSelect" visibleBindingValue="align">
+				<Label>Labels may be be aligned in the layout in two ways:</Label>
+			</Field>
+			<Field id="alignDummyCtrl" type="textfield" visibleBindingId="labelAppearanceSelect" visibleBindingValue="align" enabledBindingId="chkDisable" enabledBindingNegate="true">
+				<Label>My Field</Label>
+			</Field>
+			<Field id="alignNormalLabel" type="label" visibleBindingId="labelAppearanceSelect" visibleBindingValue="align">
+				<Label>This is the normal label alignment</Label>
+			</Field>
+			<Field id="alignControlLabel" type="label" alignWithControl="true" visibleBindingId="labelAppearanceSelect" visibleBindingValue="align">
+				<Label>This is a label with alignWithControl='true'</Label>
+			</Field>
+			
+			<Field id="sizeDesc" type="label" fontSize="small" visibleBindingId="labelAppearanceSelect" visibleBindingValue="size">
+				<Label>Labels may be colored by adding fontSize='[value]' to the definition. Supports:</Label>
+			</Field>
+			<Field id="labelSizeMini" type="label" fontSize="mini" alignWithControl="true" visibleBindingId="labelAppearanceSelect" visibleBindingValue="size">
+				<Label>This is a mini label</Label>
+			</Field>
+			<Field id="labelSizeSmall" type="label" fontSize="small" alignWithControl="true" visibleBindingId="labelAppearanceSelect" visibleBindingValue="size">
+				<Label>This is a small label</Label>
+			</Field>
+			<Field id="labelSizeRegular" type="label" fontSize="regular" alignWithControl="true" visibleBindingId="labelAppearanceSelect" visibleBindingValue="size">
+				<Label>This is a regular label (default)</Label>
+			</Field>
+			<Field id="sizeSpaceer1" type="label" fontSize="regular" visibleBindingId="labelAppearanceSelect" visibleBindingValue="size">
+				<Label></Label>
+			</Field>
+			<Field id="sizeSpaceer2" type="label" fontSize="regular" visibleBindingId="labelAppearanceSelect" visibleBindingValue="size">
+				<Label></Label>
+			</Field>
+			<Field id="sizeSpaceer3" type="label" fontSize="regular" visibleBindingId="labelAppearanceSelect" visibleBindingValue="size">
+				<Label></Label>
+			</Field>
+			
+			<Field id="colorDesc" type="label" fontSize="small" visibleBindingId="labelAppearanceSelect" visibleBindingValue="color">
+				<Label>Labels may be colored by adding fontColor='[value]' to the definition. Supports:</Label>
+			</Field>
+			<Field id="labelColorGray" type="label" fontColor="darkgray" alignWithControl="true" visibleBindingId="labelAppearanceSelect" visibleBindingValue="color">
+				<Label>darkgray</Label>
+			</Field>
+			<Field id="labelColorRed" type="label" fontColor="red" alignWithControl="true" visibleBindingId="labelAppearanceSelect" visibleBindingValue="color">
+				<Label>red</Label>
+			</Field>
+			<Field id="labelColorOrange" type="label" fontColor="orange" alignWithControl="true" visibleBindingId="labelAppearanceSelect" visibleBindingValue="color">
+				<Label>orange</Label>
+			</Field>
+			<Field id="labelColorGreen" type="label" fontColor="green" alignWithControl="true" visibleBindingId="labelAppearanceSelect" visibleBindingValue="color">
+				<Label>green</Label>
+			</Field>
+			<Field id="labelColorBlue" type="label" fontColor="blue" alignWithControl="true" visibleBindingId="labelAppearanceSelect" visibleBindingValue="color">
+				<Label>blue</Label>
+			</Field>
+
+			<Field id="chkDisable" type="checkbox" hidden="true" />
 		</ConfigUI>
 	</MenuItem>
 	<MenuItem id="customMenuItem1">
@@ -48,6 +123,19 @@
 			</Field>
 			<Field id="message" type="textfield">
 				<Label>Message</Label>
+			</Field>
+		</ConfigUI>
+	</MenuItem>
+	<MenuItem id="subscribeToBroadcast">
+		<Name>Subscribe to a Broadcast</Name>
+		<CallbackMethod>subscribeToPluginBroadcast</CallbackMethod>
+		<ButtonTitle>Subscribe</ButtonTitle>
+		<ConfigUI>
+			<Field id="pluginId" type="textbox">
+				<Label>Plugin Id:</Label>
+			</Field>
+			<Field id="broadcastKey" type="textbox">
+				<Label>Message Id:</Label>
 			</Field>
 		</ConfigUI>
 	</MenuItem>

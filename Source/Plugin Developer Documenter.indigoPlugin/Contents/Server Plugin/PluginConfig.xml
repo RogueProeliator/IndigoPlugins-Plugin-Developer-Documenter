@@ -11,7 +11,31 @@
 		http://wiki.indigodomo.com/doku.php?id=indigo_6_documentation:plugin_guide
   -->
 <PluginConfig>
-	<Field id="instructions" type="label">
+	<Field id="pluginTitleLabel" type="label" fontSize="large">
+		<Label>Plugin Developer Documenter</Label>
+	</Field>
+	<Field id="pluginAuthorLabel" type="label" fontSize="small">
+        <Label>Developed by RogueProeliator</Label>
+    </Field>
+
+	<Field type="label" id="aboutSpacer" fontSize="small">
+		<Label></Label>
+	</Field>
+	<Field id="aboutTitle" type="label" fontColor="darkGray">
+		<Label>ABOUT</Label>
+	</Field>
+	<Field id="aboutSeparator" type="separator" />
+	<Field id="pluginDescriptionLabel" type="label" fontSize="small">
+		<Label>This plugin allows you to document and follow the plugin lifecycle as well as demonstrates many available plugin features. The hope is to aid you in developing your own (more useful) plugins!</Label>
+	</Field>
+
+	<Field type="label" id="outpuOptionsSpacer" fontSize="small">
+		<Label></Label>
+	</Field>
+	<Field id="outputOptionsTitle" type="label" fontColor="darkGray">
+		<Label>LOG OUTPUT OPTIONS</Label>
+	</Field>
+	<Field id="outputInstructions" type="label">
 		<Label>This plugin can generate an incredible amount of data to the log; you may wish to reduce this to a reasonable amount by controlling what is logged below.</Label>
 	</Field>
 	<Field id="logMethodParams" type="checkbox">
