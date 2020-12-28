@@ -160,16 +160,18 @@
 			<Field id="dynamicReloadCurr" type="textfield" hidden="true" defaultValue="1" />
 		</ConfigUI>
 	</MenuItem>
-	<MenuItem id="customMenuItem1">
-		<Name>Execute Action Without UI</Name>
-		<CallbackMethod>customMenuItem1Executed</CallbackMethod>
-	</MenuItem>
+	
+	<MenuItem id="separator1" type="separator" />
 	<MenuItem id="dynamicUIDemonstration">
 		<Name>Dynamic UI Example</Name>
 		<ConfigUI></ConfigUI>
 	</MenuItem>
-	
-	<MenuItem id="separator1" type="separator" />
+
+	<MenuItem id="separator2" type="separator" />
+	<MenuItem id="customMenuItem1">
+		<Name>Execute Action Without UI</Name>
+		<CallbackMethod>customMenuItem1Executed</CallbackMethod>
+	</MenuItem>
 	<MenuItem id="triggerEventMenuItem">
 		<Name>Trigger Custom Event</Name>
 		<CallbackMethod>triggerEventFromMenu</CallbackMethod>
