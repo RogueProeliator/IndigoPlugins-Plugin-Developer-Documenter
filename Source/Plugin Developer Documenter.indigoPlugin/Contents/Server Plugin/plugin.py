@@ -747,7 +747,7 @@ class Plugin(indigo.PluginBase):
 			self.debugLogWithLineNum(u'   ({0}, {1})'.format(unicode(valuesDict), unicode(typeId)))
 
 		indigo.server.broadcastToSubscribers(valuesDict.get(u'message', u''))
-		
+		return True  # TODO: throws a "validation error" without this line.
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine is set to handle the Set Custom Device State action via the Actions.xml
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

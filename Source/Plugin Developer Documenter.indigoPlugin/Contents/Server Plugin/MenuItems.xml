@@ -30,7 +30,7 @@
 				</List>
 			</Field>
 			<Field id="headingSpacer" type="label" fontSize="mini">
-				<Label></Label>
+				<Label/>
 			</Field>
 
 			<Field id="labelAlignTitle" type="label" visibleBindingId="labelAppearanceSelect" visibleBindingValue="align" fontColor="darkGray">
@@ -56,9 +56,12 @@
 			<Field id="alignControlLabel" type="label" alignWithControl="true" visibleBindingId="labelAppearanceSelect" visibleBindingValue="align">
 				<Label>This is a label with alignWithControl='true'</Label>
 			</Field>
-			
+			<Field id="alignRightLabel" type="label" alignText="right" visibleBindingId="labelAppearanceSelect" visibleBindingValue="align">
+				<Label>This is a label with alignText='right'</Label>
+			</Field>
+
 			<Field id="sizeDesc" type="label" fontSize="small" visibleBindingId="labelAppearanceSelect" visibleBindingValue="size">
-				<Label>Labels may be colored by adding fontSize='[value]' to the definition. Supports:</Label>
+				<Label>Labels may be resized by adding fontSize='[value]' to the definition. Supports:</Label>
 			</Field>
 			<Field id="labelSizeMini" type="label" fontSize="mini" alignWithControl="true" visibleBindingId="labelAppearanceSelect" visibleBindingValue="size">
 				<Label>This is a mini label</Label>
@@ -70,13 +73,13 @@
 				<Label>This is a regular label (default)</Label>
 			</Field>
 			<Field id="sizeSpaceer1" type="label" fontSize="regular" visibleBindingId="labelAppearanceSelect" visibleBindingValue="size">
-				<Label></Label>
+				<Label/>
 			</Field>
 			<Field id="sizeSpaceer2" type="label" fontSize="regular" visibleBindingId="labelAppearanceSelect" visibleBindingValue="size">
-				<Label></Label>
+				<Label/>
 			</Field>
 			<Field id="sizeSpaceer3" type="label" fontSize="regular" visibleBindingId="labelAppearanceSelect" visibleBindingValue="size">
-				<Label></Label>
+				<Label/>
 			</Field>
 			
 			<Field id="colorDesc" type="label" fontSize="small" visibleBindingId="labelAppearanceSelect" visibleBindingValue="color">
@@ -109,7 +112,7 @@
 			</Field>
 			<Field id="enabledSeparator" type="separator" />
 			<Field id="headingSpacer" type="label" fontSize="mini">
-				<Label></Label>
+				<Label/>
 			</Field>
 
 			<Field id="chkEnableDisable" type="checkbox">

@@ -19,7 +19,7 @@
     </Field>
 
 	<Field type="label" id="aboutSpacer" fontSize="small">
-		<Label></Label>
+		<Label/>
 	</Field>
 	<Field id="aboutTitle" type="label" fontColor="darkGray" fontSize="small">
 		<Label>ABOUT</Label>
@@ -30,7 +30,7 @@
 	</Field>
 
 	<Field type="label" id="outpuOptionsSpacer" fontSize="small">
-		<Label></Label>
+		<Label/>
 	</Field>
 	<Field id="outputOptionsTitle" type="label" fontColor="darkGray">
 		<Label>LOG OUTPUT OPTIONS</Label>
