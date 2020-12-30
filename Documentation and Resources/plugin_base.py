@@ -72,7 +72,7 @@ class PluginBase(object):
 		self.stopThread = False
 		self._stopThreadPipeIn, self._stopThreadPipeOut = os.pipe()
 
-		# These member vars are used by convience methods (not as critical as above).
+		# These member vars are used by convenience methods (not as critical as above).
 		self.debug = False
 		pass
 
@@ -220,7 +220,7 @@ class PluginBase(object):
 				raise ValueError(u"required XML attribute '%s' is missing or empty" % (attrName,))
 			return default
 		elif errorIfNotAscii and attrStr[0] not in string.ascii_letters:
-			raise ValueError(u"XML attribute '%s' has a value that starts with invalid characters: '%s' (should begin with A-Z or a-z):\n%s" % (attrName,attrStr,elem.toprettyxml()))
+			raise ValueError(u"XML attribute '%s' has a value that starts with invalid characters: '%s' (should begin with A-Z or a-z):\n%s" % (attrName, attrStr, elem.toprettyxml()))
 		return attrStr
 
 	@staticmethod
@@ -328,6 +328,7 @@ class PluginBase(object):
 		return configUI
 
 	###################
+	# TODO: @staticMethod?
 	def _getDeviceStateDictForType(self, type, stateId, triggerLabel, controlPageLabel, disabled=False):
 		stateDict = indigo.Dict()
 		stateDict[u"Type"] = int(type)
@@ -459,7 +460,7 @@ class PluginBase(object):
 						statesList.append(stateDict)
 
 						# And add individual true/false types for triggering off every enumeration
-						# value possiblity (as specified by the Option list):
+						# value possibility (as specified by the Option list):
 						triggerLabelPrefix = self._getElementValueByTagName(state, u"TriggerLabelPrefix", required=False, default=u"")
 						controlPageLabelPrefix = self._getElementValueByTagName(state, u"ControlPageLabelPrefix", required=False, default=u"")
 
@@ -596,6 +597,7 @@ class PluginBase(object):
 
 	################################################################################
 	########################################
+	# TODO: @staticMethod?
 	def doesPrefsConfigUiExist(self):
 		return os.path.isfile('PluginConfig.xml')
 
@@ -1014,7 +1016,7 @@ class PluginBase(object):
 	################################################################################
 	########################################
 	def applicationWithBundleIdentifier(self, bundleID):
-		from ScriptingBridge import SBApplication
+		from ScriptingBridge import SBApplication  # TODO: SBApplicatiion reference not found
 		return SBApplication.applicationWithBundleIdentifier_(bundleID)
 
 	########################################
@@ -1092,7 +1094,7 @@ class PluginBase(object):
 							if theDevice is None:
 								validated = False
 							else:
-								stateValue = theDevice.states[devStateName]
+								stateValue = theDevice.states[devStateName]  # TODO: Unless I'm mistaken, you can't get here.  Syntax checkng is calling this a new local variable.
 						except:
 							validated = False
 					else:
@@ -1200,7 +1202,7 @@ class PluginBase(object):
 		except:
 			return u""
 
-	# Call through to pySerial's .Serial() contructor, but handle error exceptions by
+	# Call through to pySerial's .Serial() constructor, but handle error exceptions by
 	# logging them and returning None. No exceptions will be raised.
 	def openSerial(self, ownerName, portUrl, baudrate, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=None, xonxoff=False, rtscts=False, writeTimeout=None, dsrdtr=False, interCharTimeout=None, errorLogFunc=None):
 		if errorLogFunc is None:
