@@ -36,4 +36,12 @@
 			</Field>
 		</ConfigUI>
 	</Action>
+
+	<Action id="hiddenApiCallAction" deviceFilter="self" hidden="true">
+		<Name>Hidden Action - Used for Pseudo-API Implementation</Name>
+		<CallbackMethod>executeHiddenApiAction</CallbackMethod>
+		<ConfigUI>
+			<Field id="inputNumber" type="textfield" />
+		</ConfigUI>
+	</Action>
 </Actions>

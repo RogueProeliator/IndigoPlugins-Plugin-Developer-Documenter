@@ -866,6 +866,19 @@ class Plugin(indigo.PluginBase):
 
 		return (valuesDict, errorsDict)
 
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	# This call represents a demonstration of a rudamentary API specification -- by
+	# definining hidden actions and returning values from those actions they are essentially
+	# a scripting-only API call
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	def executeHiddenApiAction(self, action):
+		try:
+			inputValue = int(action.props.get(u'inputValue', '0'))
+			return inputValue * 2
+		except:
+			return 0
+
+
 
 	#/////////////////////////////////////////////////////////////////////////////////////
 	# Schedule Lifecycle Events
