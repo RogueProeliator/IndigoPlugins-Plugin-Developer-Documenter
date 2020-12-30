@@ -762,6 +762,27 @@ class Plugin(indigo.PluginBase):
 			deviceForAction.updateStateOnServer(key='exampleDisplayState', value=action.props.get('newStateValue', ''))
 			
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	# This routine is a callback for an action and demonstrates updating multiple states
+	# for the device in one call. This is far more efficient on the server than calling
+	# updateStateOnServer multiple times.
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	def setMultipleDeviceStates(self, action):
+		self.debugLogWithLineNum(u'Called setMultipleDeviceStates(self, action):')
+		if self.logMethodParams == True:
+			self.debugLogWithLineNum(u'   ({0})'.format(unicode(action)))
+
+		deviceForUpdates = indigo.devices[action.deviceId]
+		textStateVal = action.props.get(u'newStringState', '')
+		numericStateValOption = action.props.get(u'newNumberState', 'option1')
+		numericStateVal = int(numericStateValOption.replace('option', ''))
+
+		updatedStates = [
+				{'key' : u'exampleDisplayState', 'value' : textStateVal},
+				{'key' : u'exampleNumberState', 'value' : numericStateVal}
+			]
+		deviceForUpdates.updateStatesOnServer(updatedStates)
+
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine is called when the user clicks the button on the device configuration
 	# dialog
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

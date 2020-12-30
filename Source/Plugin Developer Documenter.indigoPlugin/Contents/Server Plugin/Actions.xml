@@ -36,6 +36,26 @@
 			</Field>
 		</ConfigUI>
 	</Action>
+	<Action id="setMultipleDeviceStates" deviceFilter="self">
+		<Name>Set Multiple Device States</Name>
+		<CallbackMethod>setMultipleDeviceStates</CallbackMethod>
+		<ConfigUI>
+			<Field id="instructions" type="label">
+				<Label>This action will set both device states in one call in the handler. This is the preferred way to update a device as it is more efficient than updating the states individually.</Label>
+			</Field>
+			<Field id="newStringState" type="textfield">
+				<Label>State 1:</Label>
+			</Field>
+			<Field id="newNumberState" type="menu">
+				<Label>State 2:</Label>
+				<List>
+					<Option value="option1">1</Option>
+					<Option value="option2">2</Option>
+					<Option value="option3">3</Option>
+				</List>
+			</Field>
+		</ConfigUI>
+	</Action>
 
 	<!-- 
 		Note that the following action is hidden from the user; it is utilized in this manner so that a script
