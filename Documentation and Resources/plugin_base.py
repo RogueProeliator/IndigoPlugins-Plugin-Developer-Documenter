@@ -15,7 +15,7 @@ import re
 import string
 import threading
 
-import serial
+import serial  # TODO: serial library not a base install library.
 import indigo
 
 # Class PluginBase, defined below, will be automatically inserted into the
