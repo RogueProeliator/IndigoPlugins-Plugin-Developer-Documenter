@@ -843,6 +843,29 @@ class Plugin(indigo.PluginBase):
 			listOptions.append((u'option{0}'.format(x), u'List Option {0}'.format(x)))
 		return listOptions
 
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	# This callback is handling a periodic (approximately every second) call back from
+	# a ConfigUI screen. It is set either by specifying a 'refreshCallbackMethod' in the
+	# initial valuesDict or via an XML tag
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	def pollingConfigUICallback(self, valuesDict, typeId="", devId=None):
+		self.debugLogWithLineNum(u'Called pollingConfigUICallback(self, valuesDict, typeId, devId):')
+		if self.logMethodParams == True:
+			self.debugLogWithLineNum(u'   ({0}, {1}, {2})'.format(unicode(valuesDict), unicode(typeId), unicode(devId)))
+
+		errorsDict = indigo.Dict()
+
+		# this will halt the callback, presumably after it is no longer needed; in this
+		# example we halt after the 10th callback
+		currentValue = int(valuesDict.get(u'counter', '0'))
+		currentValue += 1
+		valuesDict[u'counter'] = currentValue
+
+		if currentValue >= 10:
+			valuesDict['refreshCallbackMethod'] = None
+
+		return (valuesDict, errorsDict)
+
 
 	#/////////////////////////////////////////////////////////////////////////////////////
 	# Schedule Lifecycle Events

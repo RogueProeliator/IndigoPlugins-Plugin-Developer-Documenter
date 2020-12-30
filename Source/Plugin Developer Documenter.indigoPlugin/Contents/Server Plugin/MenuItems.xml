@@ -30,14 +30,14 @@
 				<Label></Label>
 			</Field>
 
-			<Field id="labelAlignTitle" type="label" visibleBindingId="labelAppearanceSelect" visibleBindingValue="align">
-				<Label>Label Alignment</Label>
+			<Field id="labelAlignTitle" type="label" visibleBindingId="labelAppearanceSelect" visibleBindingValue="align" fontColor="darkGray">
+				<Label>LABEL ALIGNMENT</Label>
 			</Field>
-			<Field id="labelSizesTitle" type="label" visibleBindingId="labelAppearanceSelect" visibleBindingValue="size">
-				<Label>Label Sizes</Label>
+			<Field id="labelSizesTitle" type="label" visibleBindingId="labelAppearanceSelect" visibleBindingValue="size" fontColor="darkGray">
+				<Label>LABEL SIZES</Label>
 			</Field>
-			<Field id="labelColorsTitle" type="label" visibleBindingId="labelAppearanceSelect" visibleBindingValue="color">
-				<Label>Label Text Colors</Label>
+			<Field id="labelColorsTitle" type="label" visibleBindingId="labelAppearanceSelect" visibleBindingValue="color" fontColor="darkGray">
+				<Label>LABEL TEXT COLORS</Label>
 			</Field>
 			<Field id="headingSeparator" type="separator" />
 
@@ -165,6 +165,19 @@
 	<MenuItem id="dynamicUIDemonstration">
 		<Name>Dynamic UI Example</Name>
 		<ConfigUI></ConfigUI>
+	</MenuItem>
+	<MenuItem id="refreshingUIDemo">
+		<Name>Refreshing UI Example</Name>
+		<ConfigUI>
+			<Field id="labelInstructions" type="label">
+				This configuration dialog will refresh itself approximately every second; the method must return quickly
+				but may be useful when a dialog waits for communication, for instance.
+			</Field>
+			<Field id="counter" type="textfield" readonly="true" defaultValue="0">
+				<Label>Counter:</Label>
+			</Field>
+			<Field id="refreshCallbackMethod" type="textfield" hidden="true" defaultValue="pollingConfigUICallback" />
+		</ConfigUI>
 	</MenuItem>
 
 	<MenuItem id="separator2" type="separator" />

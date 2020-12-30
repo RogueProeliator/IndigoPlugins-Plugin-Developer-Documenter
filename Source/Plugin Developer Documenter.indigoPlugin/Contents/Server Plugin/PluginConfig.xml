@@ -21,10 +21,10 @@
 	<Field type="label" id="aboutSpacer" fontSize="small">
 		<Label></Label>
 	</Field>
-	<Field id="aboutTitle" type="label" fontColor="darkGray">
+	<Field id="aboutTitle" type="label" fontColor="darkGray" fontSize="small">
 		<Label>ABOUT</Label>
 	</Field>
-	<Field id="aboutSeparator" type="separator" />
+	<Field id="aboutSeparator" type="separator" fontColor="darkGray" />
 	<Field id="pluginDescriptionLabel" type="label" fontSize="small">
 		<Label>This plugin allows you to document and follow the plugin lifecycle as well as demonstrates many available plugin features. The hope is to aid you in developing your own (more useful) plugins!</Label>
 	</Field>
@@ -35,6 +35,7 @@
 	<Field id="outputOptionsTitle" type="label" fontColor="darkGray">
 		<Label>LOG OUTPUT OPTIONS</Label>
 	</Field>
+	<Field id="outputSeparator" type="separator" />
 	<Field id="outputInstructions" type="label">
 		<Label>This plugin can generate an incredible amount of data to the log; you may wish to reduce this to a reasonable amount by controlling what is logged below.</Label>
 	</Field>
