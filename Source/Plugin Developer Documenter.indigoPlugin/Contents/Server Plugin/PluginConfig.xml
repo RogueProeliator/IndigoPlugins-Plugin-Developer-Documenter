@@ -21,7 +21,7 @@
 	<Field type="label" id="aboutSpacer" fontSize="small">
 		<Label/>
 	</Field>
-	<Field id="aboutTitle" type="label" fontColor="darkGray" fontSize="small">
+	<Field id="aboutTitle" type="label" fontColor="darkGray">
 		<Label>ABOUT</Label>
 	</Field>
 	<Field id="aboutSeparator" type="separator" fontColor="darkGray" />
@@ -36,7 +36,7 @@
 		<Label>LOG OUTPUT OPTIONS</Label>
 	</Field>
 	<Field id="outputSeparator" type="separator" />
-	<Field id="outputInstructions" type="label">
+	<Field id="outputInstructions" type="label" fontSize="small">
 		<Label>This plugin can generate an incredible amount of data to the log; you may wish to reduce this to a reasonable amount by controlling what is logged below.</Label>
 	</Field>
 	<Field id="logMethodParams" type="checkbox">

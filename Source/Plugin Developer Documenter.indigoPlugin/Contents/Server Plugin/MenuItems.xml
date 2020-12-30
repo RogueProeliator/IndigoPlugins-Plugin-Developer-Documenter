@@ -218,10 +218,10 @@
 		<CallbackMethod>subscribeToPluginBroadcast</CallbackMethod>
 		<ButtonTitle>Subscribe</ButtonTitle>
 		<ConfigUI>
-			<Field id="pluginId" type="textbox">
+			<Field id="pluginId" type="textfield">
 				<Label>Plugin Id:</Label>
 			</Field>
-			<Field id="broadcastKey" type="textbox">
+			<Field id="broadcastKey" type="textfield">
 				<Label>Message Id:</Label>
 			</Field>
 		</ConfigUI>

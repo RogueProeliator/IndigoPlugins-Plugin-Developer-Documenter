@@ -92,7 +92,7 @@ class Plugin(indigo.PluginBase):
 		self.logger.threaddebug(u'A ton of logging information here that might be used for debugging by the developer!')
 		self.debugLogWithLineNum(u'Called __init__(self, pluginId, pluginDisplayName, pluginVersion, pluginPrefs):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ("{0}", "{1}", "{2}", {3})'.format(pluginId, pluginDisplayName, pluginVersion, unicode(pluginPrefs)))
+			self.debugLogWithLineNum(u'     ("{0}", "{1}", "{2}", {3})'.format(pluginId, pluginDisplayName, pluginVersion, pluginPrefs))
 
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# Destructor... normally need not do anything here...
@@ -143,7 +143,7 @@ class Plugin(indigo.PluginBase):
 	def validatePrefsConfigUi(self, valuesDict):
 		self.debugLogWithLineNum(u'Called validatePrefsConfigUi(self, valuesDict):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0})'.format(unicode(valuesDict)))
+			self.debugLogWithLineNum(u'     ({0})'.format(valuesDict))
 
 		# possible to do real validation and return an error if it fails, such as:		
 		#errorMsgDict = indigo.Dict()
@@ -159,7 +159,7 @@ class Plugin(indigo.PluginBase):
 	def closedPrefsConfigUi(self, valuesDict, userCancelled):
 		self.debugLogWithLineNum(u'Called closedPrefsConfigUi(self, valuesDict, userCancelled):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0}, {1})'.format(unicode(valuesDict), unicode(userCancelled)))
+			self.debugLogWithLineNum(u'     ({0}, {1})'.format(valuesDict, userCancelled))
 			
 		# if the user saved his/her preferences, update our member variables now
 		if userCancelled == False:
@@ -194,7 +194,7 @@ class Plugin(indigo.PluginBase):
 	def getMenuActionConfigUiXml(self, menuId):
 		self.debugLogWithLineNum(u'Called getMenuActionConfigUiXml(self, menuId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0})'.format(unicode(menuId)))
+			self.debugLogWithLineNum(u'     ({0})'.format(menuId))
 
 		if menuId == u'dynamicUIDemonstration':
 			self.logger.debug(u'Providing dynamic ConfigUI for menu item')
@@ -211,7 +211,7 @@ class Plugin(indigo.PluginBase):
 	def getMenuActionConfigUiValues(self, menuId):
 		self.debugLogWithLineNum(u'Called getMenuActionConfigUiValues(self, menuId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0})'.format(unicode(menuId)))
+			self.debugLogWithLineNum(u'     ({0})'.format(menuId))
 		valuesDict = indigo.Dict()
 		errorMsgDict = indigo.Dict()
 		return (valuesDict, errorMsgDict)
@@ -235,7 +235,7 @@ class Plugin(indigo.PluginBase):
 	def getDeviceStateList(self, dev):
 		self.debugLogWithLineNum(u'Called getDeviceStateList(self, dev):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0})'.format(unicode(dev)))
+			self.debugLogWithLineNum(u'     ({0})'.format(dev))
 		return super(Plugin, self).getDeviceStateList(dev)
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -245,7 +245,7 @@ class Plugin(indigo.PluginBase):
 	def getDeviceDisplayStateId(self, dev):
 		self.debugLogWithLineNum(u'Called getDeviceDisplayStateId(self, dev):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0})'.format(unicode(dev)))
+			self.debugLogWithLineNum(u'     ({0})'.format(dev))
 		return super(Plugin, self).getDeviceDisplayStateId(dev)
 
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -255,7 +255,7 @@ class Plugin(indigo.PluginBase):
 	def getDeviceTypeClassName(self, typeId):
 		self.debugLogWithLineNum(u'Called getDeviceTypeClassName(self, typeId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0})'.format(unicode(typeId)))
+			self.debugLogWithLineNum(u'     ({0})'.format(typeId))
 		return super(Plugin, self).getDeviceTypeClassName(typeId)
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -267,7 +267,7 @@ class Plugin(indigo.PluginBase):
 	def getDeviceConfigUiXml(self, typeId, devId):
 		self.debugLogWithLineNum(u'Called getDeviceConfigUiXml(self, typeId, devId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0}, {1})'.format(unicode(typeId), unicode(devId)))
+			self.debugLogWithLineNum(u'     ({0}, {1})'.format(typeId, devId))
 		return super(Plugin, self).getDeviceConfigUiXml(typeId, devId)
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -277,7 +277,7 @@ class Plugin(indigo.PluginBase):
 	def getDeviceConfigUiValues(self, pluginProps, typeId, devId):
 		self.debugLogWithLineNum(u'Called getDeviceConfigUiValues(self, pluginProps, typeId, devId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0}, {1}, {2})'.format(unicode(pluginProps), unicode(typeId), unicode(devId)))
+			self.debugLogWithLineNum(u'     ({0}, {1}, {2})'.format(pluginProps, typeId, devId))
 		return super(Plugin, self).getDeviceConfigUiValues(pluginProps, typeId, devId)
 
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -287,7 +287,7 @@ class Plugin(indigo.PluginBase):
 	def validateDeviceConfigUi(self, valuesDict, typeId, devId):
 		self.debugLogWithLineNum(u'Called validateDeviceConfigUi(self, valuesDict, typeId, devId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0}, {1}, {2})'.format(unicode(valuesDict), unicode(typeId), unicode(devId)))
+			self.debugLogWithLineNum(u'     ({0}, {1}, {2})'.format(valuesDict, typeId, devId))
 			
 		# we may also change the values, here we will set the value of the address
 		# to the time
@@ -307,7 +307,7 @@ class Plugin(indigo.PluginBase):
 	def closedDeviceConfigUi(self, valuesDict, userCancelled, typeId, devId):
 		self.debugLogWithLineNum(u'Called closedDeviceConfigUi(self, valuesDict, userCancelled, typeId, devId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0}, {1}, {2}, {3})'.format(unicode(valuesDict), unicode(userCancelled), unicode(typeId), unicode(devId)))
+			self.debugLogWithLineNum(u'     ({0}, {1}, {2}, {3})'.format(valuesDict, userCancelled, typeId, devId))
 		return
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -325,7 +325,7 @@ class Plugin(indigo.PluginBase):
 	def didDeviceCommPropertyChange(self, origDev, newDev):
 		self.debugLogWithLineNum(u'Called didDeviceCommPropertyChange(self, origDev, newDev):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0}, {1})'.format(unicode(origDev), unicode(newDev)))
+			self.debugLogWithLineNum(u'     ({0}, {1})'.format(origDev, newDev))
 
 		# example of customizing the call:
 		# if origDev.pluginProps.get('ipAddress', '') != newDev.pluginProps.get('ipAddress', ''):
@@ -353,7 +353,7 @@ class Plugin(indigo.PluginBase):
 	def getDeviceFactoryUiValues(self, devIdList):
 		self.debugLogWithLineNum(u'Called getDeviceFactoryUiValues(self, devIdList):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0})'.format(unicode(devIdList)))
+			self.debugLogWithLineNum(u'     ({0})'.format(devIdList))
 		return super(Plugin, self).getDeviceFactoryUiValues(devIdList)
 
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -363,7 +363,7 @@ class Plugin(indigo.PluginBase):
 	def validateDeviceFactoryUi(self, valuesDict, devIdList):
 		self.debugLogWithLineNum(u'Called validateDeviceFactoryUi(self, valuesDict, devIdList):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0}, {1})'.format(unicode(valuesDict), unicode(devIdList)))
+			self.debugLogWithLineNum(u'     ({0}, {1})'.format(valuesDict, devIdList))
 		# errorMsgDict = indigo.Dict()
 		# errorMsgDict[u"someUiFieldId"] = u"sorry but you MUST check this checkbox!"
 		# return (False, valuesDict, errorMsgDict)
@@ -376,7 +376,7 @@ class Plugin(indigo.PluginBase):
 	def closedDeviceFactoryUi(self, valuesDict, userCancelled, devIdList):
 		self.debugLogWithLineNum(u'Called closedDeviceFactoryUi(self, valuesDict, userCancelled, devIdList):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0}, {1}, {2})'.format(unicode(valuesDict), unicode(userCancelled), unicode(devIdList)))
+			self.debugLogWithLineNum(u'     ({0}, {1}, {2})'.format(valuesDict, userCancelled, devIdList))
 		return
 		
 		
@@ -398,7 +398,7 @@ class Plugin(indigo.PluginBase):
 	def getActionCallbackMethod(self, typeId):
 		self.debugLogWithLineNum(u'Called getActionCallbackMethod(self, typeId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0})'.format(unicode(typeId)))
+			self.debugLogWithLineNum(u'     ({0})'.format(typeId))
 		return super(Plugin, self).getActionCallbackMethod(typeId)
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -409,7 +409,7 @@ class Plugin(indigo.PluginBase):
 	def getActionConfigUiXml(self, typeId, devId):
 		self.debugLogWithLineNum(u'Called getActionConfigUiXml(self, typeId, devId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0}, {1})'.format(unicode(typeId), unicode(devId)))
+			self.debugLogWithLineNum(u'     ({0}, {1})'.format(typeId, devId))
 		return super(Plugin, self).getActionConfigUiXml(typeId, devId)
 
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -419,7 +419,7 @@ class Plugin(indigo.PluginBase):
 	def getActionConfigUiValues(self, pluginProps, typeId, devId):
 		self.debugLogWithLineNum(u'Called getActionConfigUiValues(self, pluginProps, typeId, devId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0}, {1}, {2})'.format(unicode(pluginProps), unicode(typeId), unicode(devId)))
+			self.debugLogWithLineNum(u'     ({0}, {1}, {2})'.format(pluginProps, typeId, devId))
 		return super(Plugin, self).getActionConfigUiValues(pluginProps, typeId, devId)
 
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -429,7 +429,7 @@ class Plugin(indigo.PluginBase):
 	def validateActionConfigUi(self, valuesDict, typeId, devId):
 		self.debugLogWithLineNum(u'Called validateActionConfigUi(self, valuesDict, typeId, devId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0}, {1}, {2})'.format(unicode(valuesDict), unicode(typeId), unicode(devId)))
+			self.debugLogWithLineNum(u'     ({0}, {1}, {2})'.format(valuesDict, typeId, devId))
 		
 		# If validation fails, return False and an error dictionary such as:
 		# errorMsgDict = indigo.Dict()
@@ -444,7 +444,7 @@ class Plugin(indigo.PluginBase):
 	def closedActionConfigUi(self, valuesDict, userCancelled, typeId, devId):
 		self.debugLogWithLineNum(u'Called closedActionConfigUi(self, valuesDict, userCancelled, typeId, devId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0}, {1}, {2}, {3})'.format(unicode(valuesDict), unicode(userCancelled), unicode(typeId), unicode(devId)))
+			self.debugLogWithLineNum(u'     ({0}, {1}, {2}, {3})'.format(valuesDict, userCancelled, typeId, devId))
 		return
 
 	
@@ -491,7 +491,7 @@ class Plugin(indigo.PluginBase):
 				# we will process items found in the command queue
 				while not self.commandQueue.empty():
 					lenQueue = self.commandQueue.qsize()
-					self.debugLogWithLineNum(u'Command queue has {0} command(s) waiting'.format(unicode(lenQueue)))
+					self.debugLogWithLineNum(u'Command queue has {0} command(s) waiting'.format(lenQueue))
 					
 					# you get the next item in the queue via a get() call
 					command = self.commandQueue.get()
@@ -573,7 +573,7 @@ class Plugin(indigo.PluginBase):
 	def deviceCreated(self, dev):
 		self.debugLogWithLineNum(u'Called deviceCreated(self, dev):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0})'.format(unicode(dev)))
+			self.debugLogWithLineNum(u'     ({0})'.format(dev))
 		super(Plugin, self).deviceCreated(dev)
 	
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -585,7 +585,7 @@ class Plugin(indigo.PluginBase):
 	def deviceStartComm(self, dev):
 		self.debugLogWithLineNum(u'Called deviceStartComm(self, dev):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0})'.format(unicode(dev)))
+			self.debugLogWithLineNum(u'   ({0})'.format(dev))
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine is called whenever a device has been updated; if you override it, be
@@ -594,7 +594,7 @@ class Plugin(indigo.PluginBase):
 	def deviceUpdated(self, origDev, newDev):
 		self.debugLogWithLineNum(u'Called deviceUpdated(self, origDev, newDev):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0}, {1})'.format(unicode(origDev), unicode(newDev)))
+			self.debugLogWithLineNum(u'     ({0}, {1})'.format(origDev, newDev))
 		super(Plugin, self).deviceUpdated(origDev, newDev)
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -604,7 +604,7 @@ class Plugin(indigo.PluginBase):
 	def deviceStopComm(self, dev):
 		self.debugLogWithLineNum(u'Called deviceStopComm(self, dev):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0})'.format(unicode(dev)))
+			self.debugLogWithLineNum(u'   ({0})'.format(dev))
 	
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine is called whenever a device has been deleted... be sure to call the
@@ -614,7 +614,7 @@ class Plugin(indigo.PluginBase):
 	def deviceDeleted(self, dev):
 		self.debugLogWithLineNum(u'Called deviceDeleted(self, dev):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'     ({0})'.format(unicode(dev)))
+			self.debugLogWithLineNum(u'     ({0})'.format(dev))
 		super(Plugin, self).deviceDeleted(dev)
 		
 		
@@ -629,7 +629,7 @@ class Plugin(indigo.PluginBase):
 	def triggerCreated(self, trigger):
 		self.debugLogWithLineNum(u'Called triggerCreated(self, trigger):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0})'.format(unicode(trigger)))
+			self.debugLogWithLineNum(u'   ({0})'.format(trigger))
 		super(Plugin, self).triggerCreated(trigger)
 	
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -639,7 +639,7 @@ class Plugin(indigo.PluginBase):
 	def triggerStartProcessing(self, trigger):
 		self.debugLogWithLineNum(u'Called triggerStartProcessing(self, trigger):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0})'.format(unicode(trigger)))
+			self.debugLogWithLineNum(u'   ({0})'.format(trigger))
 		
 		# store the trigger in a member variable so that it may be called back whenever
 		# our triggering action occurs
@@ -656,7 +656,7 @@ class Plugin(indigo.PluginBase):
 	def triggerUpdated(self, origTrigger, newTrigger):
 		self.debugLogWithLineNum(u'Called triggerUpdated(self, origTrigger, newTrigger):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0}, {1})'.format(unicode(origTrigger), unicode(newTrigger)))
+			self.debugLogWithLineNum(u'   ({0}, {1})'.format(origTrigger, newTrigger))
 		super(Plugin, self).triggerUpdated(origTrigger, newTrigger)
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -665,7 +665,7 @@ class Plugin(indigo.PluginBase):
 	def triggerStopProcessing(self, trigger):
 		self.debugLogWithLineNum(u'Called triggerStopProcessing(self, trigger):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0})'.format(unicode(trigger)))
+			self.debugLogWithLineNum(u'   ({0})'.format(trigger))
 		
 		# if the trigger exists within our list, go ahead and delete it out now
 		triggerType = trigger.pluginTypeId
@@ -681,7 +681,7 @@ class Plugin(indigo.PluginBase):
 	def triggerDeleted(self, trigger):
 		self.debugLogWithLineNum(u'Called triggerDeleted(self, trigger):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0})'.format(unicode(trigger)))
+			self.debugLogWithLineNum(u'   ({0})'.format(trigger))
 		super(Plugin, self).triggerDeleted(trigger)
 		
 		
@@ -716,7 +716,7 @@ class Plugin(indigo.PluginBase):
 	def customMenuItem2Executed(self, valuesDict, typeId):
 		self.debugLogWithLineNum(u'Called customMenuItem2Executed(self, valuesDict, typeId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0}, {1})'.format(unicode(valuesDict), unicode(typeId)))
+			self.debugLogWithLineNum(u'   ({0}, {1})'.format(valuesDict, typeId))
 			
 		# you may return an error dictionary here like other UI validation routines
 		# errorsDict = indigo.Dict()
@@ -734,7 +734,7 @@ class Plugin(indigo.PluginBase):
 	def changeCustomDeviceCounterState(self, action):
 		self.debugLogWithLineNum(u'Called changeCustomDeviceCounterState(self, action):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0})'.format(unicode(action)))
+			self.debugLogWithLineNum(u'   ({0})'.format(action))
 		self.commandQueue.put((action.pluginTypeId, action.deviceId))
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -744,17 +744,18 @@ class Plugin(indigo.PluginBase):
 	def sendIntraPluginBroadcast(self, valuesDict, typeId):
 		self.debugLogWithLineNum(u'Called sendIntraPluginBroadcast(self, valuesDict, typeId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0}, {1})'.format(unicode(valuesDict), unicode(typeId)))
+			self.debugLogWithLineNum(u'   ({0}, {1})'.format(valuesDict, typeId))
 
 		indigo.server.broadcastToSubscribers(valuesDict.get(u'message', u''))
-		return True  # TODO: throws a "validation error" without this line.
+		return True
+
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine is set to handle the Set Custom Device State action via the Actions.xml
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def setCustomDeviceState(self, action):
 		self.debugLogWithLineNum(u'Called setCustomDeviceState(self, action):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0})'.format(unicode(action)))
+			self.debugLogWithLineNum(u'   ({0})'.format(action))
 		deviceForAction = indigo.devices[action.deviceId]
 		if action.props.get('addSymbolToState', False) == True:
 			deviceForAction.updateStateOnServer(key='exampleDisplayState', value=action.props.get('newStateValue', ''), uiValue=action.props.get('newStateValue', '') + u'°')
@@ -769,7 +770,7 @@ class Plugin(indigo.PluginBase):
 	def setMultipleDeviceStates(self, action):
 		self.debugLogWithLineNum(u'Called setMultipleDeviceStates(self, action):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0})'.format(unicode(action)))
+			self.debugLogWithLineNum(u'   ({0})'.format(action))
 
 		deviceForUpdates = indigo.devices[action.deviceId]
 		textStateVal = action.props.get(u'newStringState', '')
@@ -789,7 +790,7 @@ class Plugin(indigo.PluginBase):
 	def customDeviceConfigCallback(self, valuesDict, typeId, devId):
 		self.debugLogWithLineNum(u'Called customDeviceConfigCallback(self, valuesDict, typeId, devId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0}, {1}, {2})'.format(unicode(valuesDict), unicode(typeId), unicode(devId)))
+			self.debugLogWithLineNum(u'   ({0}, {1}, {2})'.format(valuesDict, typeId, devId))
 		return valuesDict
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -799,7 +800,7 @@ class Plugin(indigo.PluginBase):
 	def getCustomDeviceConfigMenu(self, filter="", valuesDict=None, typeId="", targetId=0):
 		self.debugLogWithLineNum(u'Called getCustomDeviceConfigMenu(self, filter, valuesDict, typeId, targetId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0}, {1}, {2}, {3})'.format(unicode(filter), unicode(valuesDict), unicode(typeId), unicode(targetId)))
+			self.debugLogWithLineNum(u'   ({0}, {1}, {2}, {3})'.format(filter, valuesDict, typeId, targetId))
 		optionsArray = [("option1", "First Option"),("option2","Second Option")]
 		return optionsArray
 		
@@ -810,7 +811,7 @@ class Plugin(indigo.PluginBase):
 	def getCustomDeviceConfigReloadingMenu(self, filter="", valuesDict=None, typeId="", targetId=0):
 		self.debugLogWithLineNum(u'Called getCustomDeviceConfigReloadingMenu(self, filter, valuesDict, typeId, targetId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0}, {1}, {2}, {3})'.format(unicode(filter), unicode(valuesDict), unicode(typeId), unicode(targetId)))
+			self.debugLogWithLineNum(u'   ({0}, {1}, {2}, {3})'.format(filter, valuesDict, typeId, targetId))
 		optionsArray = [("option3", "Dyna First Option"),("option4","Dyna Second Option")]
 		return optionsArray
 		
@@ -821,7 +822,7 @@ class Plugin(indigo.PluginBase):
 	def subscribeToPluginBroadcast(self, valuesDict, typeId):
 		self.debugLogWithLineNum(u'Called subscribeToPluginBroadcast from menu item')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0}, {1})'.format(unicode(valuesDict), unicode(typeId)))
+			self.debugLogWithLineNum(u'   ({0}, {1})'.format(valuesDict, typeId))
 		
 		pluginId = valuesDict.get(u'pluginId')
 		broadcastKey = valuesDict.get(u'broadcastKey')
@@ -834,7 +835,7 @@ class Plugin(indigo.PluginBase):
 	def dynamicPopupListExample(self, filter="", valuesDict=None, typeId="", targetId=0):
 		self.debugLogWithLineNum(u'Called dynamicPopupListExample(self, filter, valuesDict, typeId, targetId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0}, {1}, {2}, {3})'.format(unicode(filter), unicode(valuesDict), unicode(typeId), unicode(targetId)))
+			self.debugLogWithLineNum(u'   ({0}, {1}, {2}, {3})'.format(filter, valuesDict, typeId, targetId))
 		listOptions = [("option1", "First Option"),("option2","Second Option"),("option3","Third Option")]
 		return listOptions
 
@@ -856,7 +857,7 @@ class Plugin(indigo.PluginBase):
 	def dynamicPopupListReloadExample(self, filter="", valuesDict=None, typeId="", targetId=0):
 		self.debugLogWithLineNum(u'Called dynamicPopupListReloadExample(self, filter, valuesDict, typeId, targetId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0}, {1}, {2}, {3})'.format(unicode(filter), unicode(valuesDict), unicode(typeId), unicode(targetId)))
+			self.debugLogWithLineNum(u'   ({0}, {1}, {2}, {3})'.format(filter, valuesDict, typeId, targetId))
 		
 		maxListItem = int(valuesDict.get(u'dynamicReloadCurr', '1'))
 		listOptions = []
@@ -872,7 +873,7 @@ class Plugin(indigo.PluginBase):
 	def pollingConfigUICallback(self, valuesDict, typeId="", devId=None):
 		self.debugLogWithLineNum(u'Called pollingConfigUICallback(self, valuesDict, typeId, devId):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0}, {1}, {2})'.format(unicode(valuesDict), unicode(typeId), unicode(devId)))
+			self.debugLogWithLineNum(u'   ({0}, {1}, {2})'.format(valuesDict, typeId, devId))
 
 		errorsDict = indigo.Dict()
 
@@ -925,7 +926,7 @@ class Plugin(indigo.PluginBase):
 	def scheduleCreated(self, schedule):
 		self.debugLogWithLineNum(u'Called scheduleCreated(self, schedule):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0})'.format(unicode(schedule)))
+			self.debugLogWithLineNum(u'   ({0})'.format(schedule))
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine is called whenever a schedule has been updated
@@ -933,7 +934,7 @@ class Plugin(indigo.PluginBase):
 	def scheduleUpdated(self, origSchedule, newSchedule):
 		self.debugLogWithLineNum(u'Called scheduleUpdated(self, origSchedule, newSchedule):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0}, {1})'.format(unicode(origSchedule), unicode(newSchedule)))
+			self.debugLogWithLineNum(u'   ({0}, {1})'.format(origSchedule, newSchedule))
 
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine is called whenever a schedule has been deleted
@@ -941,7 +942,7 @@ class Plugin(indigo.PluginBase):
 	def scheduleDeleted(self, schedule):
 		self.debugLogWithLineNum(u'Called scheduleDeleted(self, schedule):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0})'.format(unicode(schedule)))
+			self.debugLogWithLineNum(u'   ({0})'.format(schedule))
 
 	
 	#/////////////////////////////////////////////////////////////////////////////////////
@@ -963,7 +964,7 @@ class Plugin(indigo.PluginBase):
 	def actionGroupCreated(self, group):
 		self.debugLogWithLineNum(u'Called actionGroupCreated(self, group):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0})'.format(unicode(group)))
+			self.debugLogWithLineNum(u'   ({0})'.format(group))
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine is called whenever an action group has been updated
@@ -971,7 +972,7 @@ class Plugin(indigo.PluginBase):
 	def actionGroupUpdated(self, origGroup, newGroup):
 		self.debugLogWithLineNum(u'Called actionGroupUpdated(self, origGroup, newGroup):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0}, {1})'.format(unicode(origGroup), unicode(newGroup)))
+			self.debugLogWithLineNum(u'   ({0}, {1})'.format(origGroup, newGroup))
 
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine is called whenever an action group has been deleted
@@ -979,7 +980,7 @@ class Plugin(indigo.PluginBase):
 	def actionGroupDeleted(self, group):
 		self.debugLogWithLineNum(u'Called actionGroupDeleted(self, group):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0})'.format(unicode(group)))
+			self.debugLogWithLineNum(u'   ({0})'.format(group))
 
 	
 	#/////////////////////////////////////////////////////////////////////////////////////
@@ -1000,7 +1001,7 @@ class Plugin(indigo.PluginBase):
 	def controlPageCreated(self, page):
 		self.debugLogWithLineNum(u'Called controlPageCreated(self, page):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0})'.format(unicode(page)))
+			self.debugLogWithLineNum(u'   ({0})'.format(page))
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine is called whenever a control page has been updated
@@ -1008,7 +1009,7 @@ class Plugin(indigo.PluginBase):
 	def controlPageUpdated(self, origPage, newPage):
 		self.debugLogWithLineNum(u'Called controlPageUpdated(self, origPage, newPage):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0}, {1})'.format(unicode(origPage), unicode(newPage)))
+			self.debugLogWithLineNum(u'   ({0}, {1})'.format(origPage, newPage))
 
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine is called whenever a control page has been deleted
@@ -1016,7 +1017,7 @@ class Plugin(indigo.PluginBase):
 	def controlPageDeleted(self, page):
 		self.debugLogWithLineNum(u'Called controlPageDeleted(self, page):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0})'.format(unicode(page)))
+			self.debugLogWithLineNum(u'   ({0})'.format(page))
 
 	
 	#/////////////////////////////////////////////////////////////////////////////////////
@@ -1034,7 +1035,7 @@ class Plugin(indigo.PluginBase):
 	def variableCreated(self, var):
 		self.debugLogWithLineNum(u'Called variableCreated(self, var):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0})'.format(unicode(var)))
+			self.debugLogWithLineNum(u'   ({0})'.format(var))
 
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine is called whenever an Indigo variable has been updated
@@ -1042,7 +1043,7 @@ class Plugin(indigo.PluginBase):
 	def variableUpdated(self, origVar, newVar):
 		self.debugLogWithLineNum(u'Called variableUpdated(self, origVar, newVar):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0}, {1})'.format(unicode(origVar), unicode(newVar)))
+			self.debugLogWithLineNum(u'   ({0}, {1})'.format(origVar, newVar))
 		
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine is called whenever an Indigo variable has been deleted
@@ -1050,7 +1051,7 @@ class Plugin(indigo.PluginBase):
 	def variableDeleted(self, var):
 		self.debugLogWithLineNum(u'Called variableDeleted(self, var):')
 		if self.logMethodParams == True:
-			self.debugLogWithLineNum(u'   ({0})'.format(unicode(var)))
+			self.debugLogWithLineNum(u'   ({0})'.format(var))
 			
 
 	#/////////////////////////////////////////////////////////////////////////////////////
@@ -1067,11 +1068,11 @@ class Plugin(indigo.PluginBase):
 	#	indigo.server.subscribeToBroadcast('plugin.example.com', u'dataRecv', 'receivedOtherPluginPublish')
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def receivedOtherPluginPublish(self, arg):
-		self.logger.debug(u'Received publish from a subscribed plugin: {0}'.format(unicode(arg)))
+		self.logger.debug(u'Received publish from a subscribed plugin: {0}'.format(arg))
 
 		
 	#/////////////////////////////////////////////////////////////////////////////////////
 	# Utility Routines
 	#/////////////////////////////////////////////////////////////////////////////////////
 	def debugLogWithLineNum(self, message):
-		self.logger.debug(u'[{0}] {1}'.format(unicode(inspect.currentframe().f_back.f_lineno), message))
+		self.logger.debug(u'[{0}] {1}'.format(inspect.currentframe().f_back.f_lineno, message))
