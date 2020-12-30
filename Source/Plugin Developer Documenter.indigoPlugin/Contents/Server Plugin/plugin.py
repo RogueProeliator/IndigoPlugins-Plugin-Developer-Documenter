@@ -870,6 +870,11 @@ class Plugin(indigo.PluginBase):
 	# This call represents a demonstration of a rudamentary API specification -- by
 	# definining hidden actions and returning values from those actions they are essentially
 	# a scripting-only API call
+	#
+	# Example call (from another plugin):
+	#	plugin = indigo.server.getPlugin("com.duncanware.indigoPluginDeveloperDocumenter")
+	#   returnVal = plugin.executeAction("hiddenApiCallAction", deviceId=123456, props = {"inputValue": 2})
+	#   # returnVal will be 4
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def executeHiddenApiAction(self, action):
 		try:

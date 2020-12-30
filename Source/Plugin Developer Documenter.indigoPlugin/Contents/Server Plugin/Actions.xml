@@ -37,6 +37,11 @@
 		</ConfigUI>
 	</Action>
 
+	<!-- 
+		Note that the following action is hidden from the user; it is utilized in this manner so that a script
+		or another plugin could call the action as a pseudo-API for the plugin. In this case it simply
+		returns the inputNumber value * 2. An actual plugin could return JSON, a calculated value, etc.
+	-->
 	<Action id="hiddenApiCallAction" deviceFilter="self" hidden="true">
 		<Name>Hidden Action - Used for Pseudo-API Implementation</Name>
 		<CallbackMethod>executeHiddenApiAction</CallbackMethod>

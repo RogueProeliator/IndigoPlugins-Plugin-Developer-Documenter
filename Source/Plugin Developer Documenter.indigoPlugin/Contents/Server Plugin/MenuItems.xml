@@ -15,6 +15,9 @@
 		http://wiki.indigodomo.com/doku.php?id=indigo_6_documentation:plugin_guide
 -->
 <MenuItems>
+	<!-- //////////////////////////////////////////////////////////////////////////
+	     ///// DETAILED UI CONTROL EXAMPLES
+	     //////////////////////////////////////////////////////////////////////////-->
 	<MenuItem id="uiDemonstration">
 		<Name>UI Components Example - Labels</Name>
 		<ConfigUI>
@@ -161,6 +164,9 @@
 		</ConfigUI>
 	</MenuItem>
 	
+	<!-- //////////////////////////////////////////////////////////////////////////
+	     ///// "SPECIAL CASE" UI EXAMPLES
+	     //////////////////////////////////////////////////////////////////////////-->
 	<MenuItem id="separator1" type="separator" />
 	<MenuItem id="dynamicUIDemonstration">
 		<Name>Dynamic UI Example</Name>
@@ -180,6 +186,9 @@
 		</ConfigUI>
 	</MenuItem>
 
+	<!-- //////////////////////////////////////////////////////////////////////////
+	     ///// MISC PLUGIN IMPLEMENTATION EXAMPLES
+	     //////////////////////////////////////////////////////////////////////////-->
 	<MenuItem id="separator2" type="separator" />
 	<MenuItem id="customMenuItem1">
 		<Name>Execute Action Without UI</Name>

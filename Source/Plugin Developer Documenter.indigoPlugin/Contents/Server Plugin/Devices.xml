@@ -57,6 +57,10 @@
 			<Field id="descriptionHiddenFields" type="label" fontSize="small">
 				<Label>Note that fields may be hidden from the user; an 'address' field is hidden but, being in the ConfigUI will generate a property. A property with 'address' as the id will show in the 'Address' column in Indigo's device list.</Label>
 			</Field>
+
+			<!-- A value in the "address" field ID will be shown in the Address column in the 
+				 Indigo client, even if it is hidden in the XML, as below
+			-->
 			<Field id="address" type="textfield" hidden="true">
 				<Label />
 			</Field>
