@@ -1,23 +1,182 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 ####################
-# Copyright (c) 2013, Perceptive Automation, LLC. All rights reserved.
+# Copyright (c) 2017, Perceptive Automation, LLC. All rights reserved.
 # http://www.indigodomo.com
 
 import errno
+import json
+import logging
+import logging.handlers
 import os
+import re
 import select
+import string
 import sys
+import threading
 import time
 import traceback
-import xml.dom.minidom
-import re
-import string
-import threading
+import xml.etree.ElementTree as xmlTree
+from xmljson import badgerfish as badgerfish
 
-import serial  # TODO: serial library not a base install library.
+import readline		# readline import required for command history to work correctly
+import functools
+from code import InteractiveConsole
+
+import serial
 import indigo
 
+################################################################################
+kPluginConfigFilename = u"PluginConfig"		# + .xml or .json
+kMenuItemsFilename = u"MenuItems"			# + .xml or .json
+kDevicesFilename = u"Devices"				# + .xml or .json
+kEventsFilename = u"Events"					# + .xml or .json
+kActionsFilename = u"Actions"				# + .xml or .json
+
+kPluginDebugMode_debugShell = 200	# Mirrored from CPlugin.h
+
+################################################################################
+################################################################################
+# Logging additions
+################################################################################
+# For backwards compatibility, we need to define a NullHandler (it's defined
+# in Python 2.7 but we still support 2.6
+try:
+	from logging import NullHandler
+except ImportError:
+	class NullHandler(logging.Handler):
+		def emit(self, record):
+			pass
+	logging.NullHandler = NullHandler
+
+################################################################################
+# Adding a new THREADDEBUG level at 5 for more detailed debugging
+################################################################################
+# First, we add the level name and the actual level to the logging module
+logging.addLevelName(5, "THREADDEBUG")
+logging.THREADDEBUG = 5
+
+# Next, we create our own version of the Logger class that adds a threaddebug
+# method that parallel's debug, info, etc.
+class IndigoLogger(logging.Logger):
+	def threaddebug(self, msg, *args, **kwargs):
+		if self.isEnabledFor(logging.THREADDEBUG):
+			self._log(logging.THREADDEBUG, msg, args, **kwargs)
+
+# We tell the logger module to use this Logger object as the one to create
+# when logger.getLogger() is called
+logging.setLoggerClass(IndigoLogger)
+
+################################################################################
+# Finally, we define a logging handler that emits log messages into the Indigo
+# Event Log.
+################################################################################
+class IndigoLogHandler(logging.Handler, object):
+	def __init__(self, displayName, level=logging.NOTSET):
+		super(IndigoLogHandler, self).__init__(level)
+		self.displayName = displayName
+
+	def emit(self, record):
+		# First, determine if it needs to be an Indigo error
+		is_error = False
+		if record.levelno in (logging.ERROR, logging.CRITICAL):
+			is_error = True
+		type_string = self.displayName
+		# For any level besides INFO and ERROR (which Indigo handles), we append
+		# the debug level (i.e. Critical, Warning, Debug, etc) to the type string
+		if record.levelno not in (logging.INFO, logging.ERROR):
+			type_string += u" %s" % record.levelname.title()
+		# Then we write the message
+		indigo.server.log(message=self.format(record), type=type_string, isError=is_error)
+
+################################################################################
+################################################################################
+def _consoleThreadRun(plugin):
+	plugin.pluginDisplayName
+	ver_str = "Python %s\n" % (sys.version)
+	ver_str += "Connected to Indigo Server v%s, api v%s (%s:%d)\n" % (indigo.server.version, indigo.server.apiVersion, indigo.server.address, indigo.server.portNum)
+	ver_str += "Started Plugin %s v%s" % (plugin.pluginDisplayName, plugin.pluginVersion)
+
+	try:
+		globs = globals()
+		globs["self"] = plugin
+		shell = InteractiveConsole(globs)
+
+		# Originally here we just called shell.interact(ver_str), but we need
+		# a check inside the REPR to see if plugin.stopThread is set so we can
+		# more gracefully shutdown the plugin if the user does CNTRL-C which
+		# sends a SIGINT. Normally that would be translated by python into a
+		# KeyboardInterrupt exception, but not for us since the IndigoPluginHost
+		# already defined a signal override for SIGINT (see CAppCore::_CatchKernelSignal).
+		#
+		# The code below is very similar to shell.interact() except for the additional
+		# plugin.stopThread conditional.
+		#
+		#	shell.interact(ver_str)
+		#
+		try:
+			sys.ps1
+		except AttributeError:
+			sys.ps1 = ">>> "
+		try:
+			sys.ps2
+		except AttributeError:
+			sys.ps2 = "... "
+		shell.write("%s\n" % str(ver_str))
+		more = 0
+		while 1:
+			if more:
+				prompt = sys.ps2
+			else:
+				prompt = sys.ps1
+			try:
+				line = shell.raw_input(prompt)
+				if plugin.stopThread:			# Perceptive added conditional. (mmb)
+					raise plugin.StopThread
+				# Can be None if sys.stdin was redefined
+				encoding = getattr(sys.stdin, "encoding", None)
+				if encoding and not isinstance(line, unicode):
+					line = line.decode(encoding)
+			except EOFError:
+				shell.write("\n")
+				break
+			else:
+				more = shell.push(line)
+			# Perceptive commented out. We want CNTRL-C to exit the plugin -- not just
+			# reset the buffer. This code actually isn't executed because IndigoPluginHost
+			# defines a signal override for SIGINT, but I want to comment it out to make
+			# it clear we wouldn't want it executed even if that signal didn't exist. (mmb)
+			# try:
+			#	code above inside while loop
+			# except KeyboardInterrupt:
+			#	shell.write("\nKeyboardInterrupt\n")
+			#	shell.resetbuffer()
+			#	more = 0
+	except Exception, e:
+		# plugin.debugLog(u"console thread exception: %s" % unicode(e))
+		pass
+	finally:
+		# plugin.debugLog(u"console thread exiting")
+		plugin.stopPlugin(u"", False)
+
+def startInteractiveConsole(plugin):
+	consoleThread = threading.Thread(
+		target=functools.partial(_consoleThreadRun, plugin)
+	)
+	consoleThread.setName("consoleThread")
+	consoleThread.start()
+	return consoleThread
+
+################################################################################
+validDeviceTypes = ["dimmer", "relay", "sensor", "speedcontrol", "thermostat", "sprinkler", "custom"]
+
+fieldTypeTemplates = {
+	# Key is node <Field> type attribute, value is template file name.
+	u"serialport": u"_configUiField_serialPort.json"
+}
+
+################################################################################
+################################################################################
 # Class PluginBase, defined below, will be automatically inserted into the
 # "indigo" namespace by the host process. Any classes, functions, variables,
 # etc., defined outside the PluginBase class scope will NOT be inserted.
@@ -27,21 +186,21 @@ import indigo
 # indigo.PluginBase, defined by plugin.py).
 
 ################################################################################
-validDeviceTypes = ["dimmer", "relay", "sensor", "speedcontrol", "thermostat", "sprinkler", "custom"]
-
-fieldTypeTemplates = {
-	# Key is node <Field> type attribute, value is template file name.
-	u"serialport": u"_configUiField_serialPort.xml"
-}
-
-################################################################################
 ################################################################################
 class PluginBase(object):
 	""" Base Indigo Plugin class that provides some default behaviors and utility functions. """
 	############################################################################
+	class InterfaceError(Exception):
+		def __init__(self, value=None):
+			super(PluginBase.InterfaceError, self).__init__(value)
+
+	class InvalidParameter(Exception):
+		def __init__(self, value=None):
+			super(PluginBase.InvalidParameter, self).__init__(value)
+
 	class StopThread(Exception):
 		def __init__(self, value=None):
-			self.value = value	# unicode string
+			super(PluginBase.StopThread, self).__init__(value)
 
 	############################################################################
 	menuItemsList = indigo.List()
@@ -52,6 +211,10 @@ class PluginBase(object):
 
 	########################################
 	def __init__(self, pluginId, pluginDisplayName, pluginVersion, pluginPrefs):
+		##################
+		indigo._initializeDebugger()	# For connecting to PyCharm debug server.
+
+		##################
 		# pluginPrefs is an Indigo dictionary object of all preferences which
 		# are automatically loaded before we are initialized, and automatically
 		# saved after shutdown().
@@ -59,25 +222,93 @@ class PluginBase(object):
 		self.pluginDisplayName = pluginDisplayName
 		self.pluginVersion = pluginVersion
 		self.pluginPrefs = pluginPrefs
+		self.consoleThread = None
 
 		self.deviceFactoryXml = None
 
-		# Parse the XML files and store the pieces we or other clients will need later.
-		self._parseMenuItemsXML('MenuItems.xml')
-		self._parseDevicesXML('Devices.xml')
-		self._parseEventsXML('Events.xml')
-		self._parseActionsXML('Actions.xml')
+		self.jsonStripTokenizer = None
 
+		##################
+		# Set up logging first (before parsing XML or anything else that might need to log).
+		self._debug = False
+		# Plugin (as in the plugin class) is the log namespace
+		self.logger = logging.getLogger("Plugin")
+		# We set the level to THREADDEBUG so everything gets to each handler - the handlers can then
+		# filter messages at the levels they want
+		self.logger.setLevel(logging.THREADDEBUG)
+		self.indigo_log_handler = IndigoLogHandler(pluginDisplayName, logging.INFO)
+		ifmt = logging.Formatter('%(message)s')
+		self.indigo_log_handler.setFormatter(ifmt)
+		# The Indigo handler gets set to INFO so only INFO or greater messages get logged (no debugging)
+		self.indigo_log_handler.setLevel(logging.INFO)
+		self.logger.addHandler(self.indigo_log_handler)
+
+		log_dir = indigo.server.getLogsFolderPath(pluginId)
+		log_dir_exists = os.path.isdir(log_dir)
+		if not log_dir_exists:
+			try:
+				os.mkdir(log_dir)
+				log_dir_exists = True
+			except:
+				indigo.server.log(u"unable to create plugin log directory - logging to the system console", isError=True)
+				self.plugin_file_handler = logging.StreamHandler()
+		if log_dir_exists:
+			self.plugin_file_handler = logging.handlers.TimedRotatingFileHandler("%s/plugin.log" % log_dir, when='midnight', backupCount=5)
+
+		pfmt = logging.Formatter('%(asctime)s.%(msecs)03d\t%(levelname)s\t%(name)s.%(funcName)s:\t%(msg)s', datefmt='%Y-%m-%d %H:%M:%S')
+		self.plugin_file_handler.setFormatter(pfmt)
+		# The file handler gets set to THREADDEBUG so everything gets logged there by default
+		self.plugin_file_handler.setLevel(logging.THREADDEBUG)
+		self.logger.addHandler(self.plugin_file_handler)
+
+		##################
 		# Create a pipe for efficient sleeping via select().
 		self.stopThread = False
 		self._stopThreadPipeIn, self._stopThreadPipeOut = os.pipe()
 
-		# These member vars are used by convenience methods (not as critical as above).
-		self.debug = False
-		pass
+		##################
+		# Parse the XML files and store the pieces we or other clients will need later.
+		try:
+			self._parseMenuItemsXML(kMenuItemsFilename)
+			self._parseDevicesXML(kDevicesFilename)
+			self._parseEventsXML(kEventsFilename)
+			self._parseActionsXML(kActionsFilename)
+		except Exception, e:
+			# The parse methods are good about giving verbose information regarding XML syntax errors
+			# in the exception, so just log the exception here:
+			self.logger.error(unicode(e))
+			# And then raise a StopThread exception, which will cause IPH to shutdown the plugin
+			# and will *not* log the exception stack trace -- it wouldn't be useful for debugging XML
+			# syntax errors.
+			raise self.StopThread
 
-	def __del__(self):
-		pass
+		##################
+		if indigo.host.debugMode == kPluginDebugMode_debugShell:
+			self.consoleThread = startInteractiveConsole(self)
+
+	@property
+	def debug(self):
+		if not hasattr(self, '_debug'):
+			return False
+		return self._debug
+
+	@debug.setter
+	def debug(self, value):
+		self._debug = value
+		#
+		# Note this only sets the logging level to DEBUG for the indigo_log_handler
+		# (used by IndigoServer). The plugin_file_handler (per plugin log files)
+		# intentionally default to always showing debug logging. If needed this can
+		# be overriden by the plugin directly calling:
+		#
+		#	self.plugin_file_handler.setLevel(logging.INFO)
+		#
+		if not hasattr(self, 'indigo_log_handler'):
+			return
+		if value:
+			self.indigo_log_handler.setLevel(logging.DEBUG)
+		else:
+			self.indigo_log_handler.setLevel(logging.INFO)
 
 	########################################
 	@staticmethod
@@ -106,22 +337,34 @@ class PluginBase(object):
 		return PluginBase.versGreaterThanOrEq(indigo.server.version, versStr)
 
 	########################################
+	# Log methods for backwards compatibility. Should use the self.logger Python logger instead.
+	########################################
 	def debugLog(self, msg):
-		if self.debug:
-			indigo.server.log(type=self.pluginDisplayName + u" Debug", message=msg)
+		if not hasattr(self, 'logger'):
+			return
+		self.logger.debug(msg)
 
 	def errorLog(self, msg):
-		indigo.server.log(message=msg, isError=True)
+		if not hasattr(self, 'logger'):
+			return
+		self.logger.error(msg)
 
 	def exceptionLog(self):
+		if not hasattr(self, 'logger'):
+			return
 		try:
-			self.errorLog(u"Error in plugin execution:\n\n" + traceback.format_exc(30))
+			self.logger.error(u"Error in plugin execution:\n\n" + traceback.format_exc(30))
 		except:
 			pass	# shouldn't ever throw, but don't raise if it does
 
 	########################################
+	def launchDebugger(self):
+		break_on_launch = False		# This works, but needs to be a UI option AND I'm not sure it is a great idea
+		if break_on_launch:			# since it breaks in here and not the developer's source file.
+			indigo.debugger()
+
 #	def startup(self):
-#		self.debugLog(u"startup called")
+#		self.logger.debug(u"startup called")
 
 	def _postStartup(self):
 		self._deviceEnumAndStartComm()
@@ -129,12 +372,17 @@ class PluginBase(object):
 
 	########################################
 #	def shutdown(self):
-#		self.debugLog(u"shutdown called")
+#		self.logger.debug(u"shutdown called")
 
 	def _preShutdown(self):
 		self.stopConcurrentThread()
 		self._triggerEnumAndStopProcessing()
 		self._deviceEnumAndStopComm()
+		if self.consoleThread is not None:
+			if self.consoleThread.isAlive():
+				self.logger.info(u"waiting for interactive console window to close")
+				self.consoleThread.join()
+			self.consoleThread = None
 
 	########################################
 	def prepareToSleep(self):
@@ -147,10 +395,15 @@ class PluginBase(object):
 		self._triggerEnumAndStartProcessing()
 
 	########################################
+	def _preRunConcurrentThread(self):
+		# PyCharm debugger needs a settrace() call inside our RunConcurrentThread
+		# thread for breakpoints to work correctly.
+		indigo._initializeDebugger()
+
 #	def runConcurrentThread(self):
 #		try:
 #			while True:
-#				self.debugLog(u"processing something...")
+#				self.logger.debug(u"processing something...")
 #				# Do your stuff here
 #				self.Sleep(8)
 #		except self.StopThread:
@@ -191,144 +444,234 @@ class PluginBase(object):
 	########################################
 	###################
 	@staticmethod
-	def _getChildElementsByTagName(elem, tagName):
-		childList = []
-		for child in elem.childNodes:
-			if child.nodeType == child.ELEMENT_NODE and (tagName == u"*" or child.tagName == tagName):
-				childList.append(child)
-		return childList
+	def _getChildElementsByTagName2(elem, tagName):
+		return elem.findall("%s" % tagName)
 
 	@staticmethod
-	def _getXmlFromFile(filename):
+	def _getChildSingleElementByTagName2(elem, tagName, required=True, default=None, filename=u"unknown"):
+		children = elem.findall("%s" % tagName)
+		if len(children) == 0:
+			if required:
+				raise ValueError(u"required XML element <%s> is missing from <%s> in file %s" % (tagName,elem.tag,filename))
+			return default
+		elif len(children) > 1:
+			raise ValueError(u"found %d <%s> XML elements inside <%s> in file %s (should only be one)" % (len(children),tagName,elem.tag,filename))
+		return children[0]
+
+	@staticmethod
+	def _getFileContents(filename):
 		if not os.path.isfile(filename):
 			return u""
-		xml_file = file(filename, 'r')
-		xml_data = xml_file.read()
-		xml_file.close()
-		return xml_data
+		f = file(filename, 'r')
+		data = f.read()
+		f.close()
+		return data
 
 	@staticmethod
-	def _getXmlFromTemplate(templateName):
-		filename = indigo.host.resourcesFolderPath + '/templates/' + templateName
-		return PluginBase._getXmlFromFile(filename)
+	def _getTemplateParentFolder():
+		return indigo.host.resourcesFolderPath + '/templates/'
 
 	@staticmethod
-	def _getElementAttribute(elem, attrName, required=True, default=None, errorIfNotAscii=True):
-		attrStr = elem.getAttribute(attrName)
+	def _getElementAttribute2(elem, attrName, required=True, default=None, errorIfNotAscii=True, filename=u"unknown"):
+		attrStr = elem.get(attrName)
 		if attrStr is None or len(attrStr) == 0:
 			if required:
-				raise ValueError(u"required XML attribute '%s' is missing or empty" % (attrName,))
+				raise ValueError(u"required XML attribute '%s' is missing or empty in <%s> of file %s" % (attrName,elem.tag,filename))
 			return default
 		elif errorIfNotAscii and attrStr[0] not in string.ascii_letters:
-			raise ValueError(u"XML attribute '%s' has a value that starts with invalid characters: '%s' (should begin with A-Z or a-z):\n%s" % (attrName, attrStr, elem.toprettyxml()))
+			raise ValueError(u"XML attribute '%s' in file %s has a value that starts with invalid characters: '%s' (should begin with A-Z or a-z):\n%s" % (attrName,filename,attrStr,xmlTree.tostring(elem, method="xml")))
 		return attrStr
 
 	@staticmethod
-	def _getElementValueByTagName(elem, tagName, required=True, default=None):
-		valueElemList = PluginBase._getChildElementsByTagName(elem, tagName)
-		if len(valueElemList) == 0:
-			if required:
-				raise ValueError(u"required XML element <%s> is missing" % (tagName,))
+	def _getElementValueByTagName2(elem, tagName, required=True, default=None, filename=u"unknown"):
+		child = PluginBase._getChildSingleElementByTagName2(elem, tagName, required=required, default=None, filename=filename)
+		if child is None:
 			return default
-		elif len(valueElemList) > 1:
-			raise ValueError(u"found more than one XML element <%s> (should only be one)" % (tagName,))
-
-		valueStr = valueElemList[0].firstChild.data
-		if valueStr is None or len(valueStr) == 0:
+		value = child.text
+		if value is None or len(value) == 0:
 			if required:
-				raise ValueError(u"required XML element <%s> is empty" % (tagName,))
+				raise ValueError(u"required XML element <%s> inside <%s> of file %s is empty" % (tagName,elem.tag,filename))
 			return default
-		return valueStr
+		return value
 
 	###################
 	def _parseMenuItemsXML(self, filename):
-		if not os.path.isfile(filename):
+		if not self._xmlOrJsonFileExist(filename):
 			return
-		try:
-			dom = xml.dom.minidom.parseString(self._getXmlFromFile(filename))
-		except:
-			raise LookupError(filename + u" is malformed")
-		menuItemsElem = self._getChildElementsByTagName(dom, u"MenuItems")
-		if len(menuItemsElem) != 1:
-			raise LookupError(u"Incorrect number of <MenuItems> elements found")
+		(menuItemsTree, filename) = self._xmlOrJsonParse(filename)
+		if menuItemsTree.tag != "MenuItems":
+			raise LookupError(u"Incorrect number of <MenuItems> elements found in file %s" % (filename))
 
-		menuItems = self._getChildElementsByTagName(menuItemsElem[0], u"MenuItem")
+		menuItems = self._getChildElementsByTagName2(menuItemsTree, u"MenuItem")
 		for menu in menuItems:
-			serverVers = self._getElementAttribute(menu, u"_minServerVers", required=False, errorIfNotAscii=False)
+			serverVers = self._getElementAttribute2(menu, u"_minServerVers", required=False, errorIfNotAscii=False, filename=filename)
 			if serverVers is not None and not PluginBase.serverVersCompatWith(serverVers):
 				continue	# This version of Indigo Server isn't compatible with this object (skip it)
 
 			menuDict = indigo.Dict()
-			menuId = self._getElementAttribute(menu, u"id")
+			menuId = self._getElementAttribute2(menu, u"id", filename=filename)
 			if menuId in self.menuItemsDict:
-				raise LookupError(u"Duplicate menu id found: " + menuId)
+				raise LookupError(u"Duplicate menu id (%s) found in file %s" % (menuId, filename))
 
 			menuDict[u"Id"] = menuId
-			menuDict[u"Name"] = self._getElementValueByTagName(menu, u"Name", False)
+			menuDict[u"Name"] = self._getElementValueByTagName2(menu, u"Name", False, filename=filename)
 
 			if "Name" in menuDict:
-				menuDict[u"ButtonTitle"] = self._getElementValueByTagName(menu, u"ButtonTitle", False)
+				menuDict[u"ButtonTitle"] = self._getElementValueByTagName2(menu, u"ButtonTitle", False, filename=filename)
 
 				# Plugin should specify at least a CallbackMethod or ConfigUIRawXml (possibly both)
-				menuDict[u"CallbackMethod"] = self._getElementValueByTagName(menu, u"CallbackMethod", False)
-				configUIList = self._getChildElementsByTagName(menu, u"ConfigUI")
-				if len(configUIList) > 0:
-					menuDict[u"ConfigUIRawXml"] = self._parseConfigUINode(dom, configUIList[0]).toxml()
-				else:
-					if not "CallbackMethod" in menuDict:
-						raise ValueError(u"<MenuItem> elements must contain either a <CallbackMethod> and/or a <ConfigUI> element.")
+				menuDict[u"CallbackMethod"] = self._getElementValueByTagName2(menu, u"CallbackMethod", False, filename=filename)
+				configUi = self._getChildSingleElementByTagName2(menu, u"ConfigUI", required=False, filename=filename)
+				if configUi is not None:
+					menuDict[u"ConfigUIRawXml"] = self._parseConfigUINode(configUi, filename=filename)
+				elif not "CallbackMethod" in menuDict:
+					raise ValueError(u"<MenuItem> elements must contain either a <CallbackMethod> and/or a <ConfigUI> element")
 
 			self.menuItemsList.append(menuDict)
 			self.menuItemsDict[menuId] = menuDict
 
 	###################
-	def _swapTemplatedField(self, mainDom, configUI, refnode, templateFilename, fileInPluginSpace):
-		if fileInPluginSpace:
-			templateRaw = self._getXmlFromFile(templateFilename)
-		else:
-			templateRaw = self._getXmlFromTemplate(templateFilename)
+	def _swapTemplatedField(self, configUI, refnode, refId, templateFilename, fileInHostBundle):
+		(templateTree, filename) = self._xmlOrJsonParse(templateFilename, fileInHostBundle=fileInHostBundle, templateSwapFieldId=refId)
+		if templateTree.tag != "Template":
+			raise LookupError(u"XML template file %s must have one root level <Template> node" % (filename))
 
-		refId = self._getElementAttribute(refnode, u"id", False)
-		if refId:
-			templateRaw = templateRaw.replace("_FIELDID", refId)
-
-		templateDom = xml.dom.minidom.parseString(templateRaw)
-		templateNodes = self._getChildElementsByTagName(templateDom, u"Template")
-		if len(templateNodes) != 1:
-			raise LookupError(u"XML template file %s must have one root level <Template> node" % (templateFilename,))
-
-		importFieldList = self._getChildElementsByTagName(templateNodes[0], u"Field")
+		importFieldList = self._getChildElementsByTagName2(templateTree, u"Field")
+		insertIndex = list(configUI).index(refnode)
 		for importField in importFieldList:
-			importField = mainDom.importNode(importField, True)
-			configUI.insertBefore(importField, refnode)
+			configUI.insert(insertIndex, importField)
+			insertIndex += 1
 
-		configUI.removeChild(refnode)
+		configUI.remove(refnode)
 		return configUI
 
-	def _parseConfigUINode(self, mainDom, configUI):
+	def _parseConfigUINode(self, configUI, filename=u"unknown", returnXml=True):
 		# Parse all of the config Field nodes looking for any template
 		# substitution that needs to occur. For example, <Field> nodes of
 		# type="serialport" are substituted with the XML from file
 		# _configUiField_serialPort.xml to provide a more complete multi-
 		# field control that allows local serial ports and IP based
 		# serial connections.
-		fieldList = self._getChildElementsByTagName(configUI, u"Field")
+		fieldList = self._getChildElementsByTagName2(configUI, u"Field")
 		for refnode in fieldList:
-			typeVal = self._getElementAttribute(refnode, u"type").lower()
+			typeVal = self._getElementAttribute2(refnode, u"type", filename=filename).lower()
 			if typeVal in fieldTypeTemplates:
-				self._swapTemplatedField(mainDom, configUI, refnode, fieldTypeTemplates[typeVal], False)
+				templatename = fieldTypeTemplates[typeVal]
+				refId = self._getElementAttribute2(refnode, u"id", False, filename=templatename)
+				self._swapTemplatedField(configUI, refnode, refId, templatename, True)
 
-		fieldList = self._getChildElementsByTagName(configUI, u"Template")
+		fieldList = self._getChildElementsByTagName2(configUI, u"Template")
 		for refnode in fieldList:
-			filename = self._getElementAttribute(refnode, u"file")
-			if filename:
-				self._swapTemplatedField(mainDom, configUI, refnode, filename, True)
+			templatename = self._getElementAttribute2(refnode, u"file", filename=filename)
+			if templatename:
+				refId = self._getElementAttribute2(refnode, u"id", False, filename=templatename)
+				self._swapTemplatedField(configUI, refnode, refId, templatename, False)
 
-		# self.debugLog(u"configUI:\n" + configUI.toxml() + "\n")
-		return configUI
+		# self.logger.debug(u"configUI:\n" + xmlTree.tostring(configUI, encoding="UTF-8", method="xml") + "\n")
+		if returnXml:
+			return xmlTree.tostring(configUI, encoding="UTF-8", method="xml")
+		else:
+			return configUI
+
+	########################################
+	def _stripJsonComments(self, input, strip_space=False):
+		def replacer(match):
+			ss = match.group(0)
+			return " " if ss.startswith('/') else ss
+
+		if self.jsonStripTokenizer is None:
+			self.jsonStripTokenizer = re.compile(
+				r'//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"',
+				re.DOTALL | re.MULTILINE
+	    	)
+		return re.sub(self.jsonStripTokenizer, replacer, input)
+
+	def _xmlOrJsonFileExist(self, basename):
+		return os.path.isfile(basename + ".xml") or os.path.isfile(basename + ".json")
+
+	def _xmlOrJsonParse(self, basename, fileInHostBundle=False, templateSwapFieldId=None):
+		# .json file version takes priority, but if it isn't found we'll try for the .xml version.
+		# Note if files aren't found then an empty xml ElementTree element is returned.
+		parentFolder = "./"
+		if fileInHostBundle:
+			parentFolder = self._getTemplateParentFolder()
+
+		if basename.endswith('.json'):
+			isXml = False
+			filename = basename
+		elif basename.endswith('.xml'):
+			isXml = True
+			filename = basename
+		else:
+			filename = basename + ".json"
+			if os.path.isfile(parentFolder + filename):
+				isXml = False
+			else:
+				isXml = True
+				filename = basename + ".xml"
+
+		try:
+			elemTree = None
+			if os.path.isfile(parentFolder + filename):
+				rawContents = self._getFileContents(parentFolder + filename)
+				if len(rawContents) > 0:
+					if templateSwapFieldId is not None:
+						rawContents = rawContents.replace("_FIELDID", templateSwapFieldId)
+
+					if isXml:
+						elemTree = xmlTree.XML(rawContents)
+					else:
+						jsonTree = json.loads(self._stripJsonComments(rawContents))
+						elemTreeList = badgerfish.etree(jsonTree)
+						if len(elemTreeList) > 0:
+							elemTree = elemTreeList[0]
+
+						# Useful for debugging:
+						#
+						# from xml.dom import minidom
+						# prettyXml = minidom.parseString(xmlTree.tostring(elemTree, encoding="UTF-8", method="xml")).toprettyxml()
+						# self.logger.debug(u"json converted input:\n%s" % (prettyXml))
+
+			if elemTree is None:
+				elemTree = xmlTree.Element("Empty")
+			return (elemTree, filename)
+		except Exception, e:
+			self.logger.error(u"%s has an error: %s" % (filename, unicode(e)))
+			raise LookupError(u"%s is malformed" % (filename))
+
+	# This isn't called from anywhere in here, but is just a handy utility function
+	# that developers can call from their plugin's interfactive shell like this:
+	#
+	#	self.convertXmlFileToJson("Actions")
+	#	self.convertXmlFileToJson("Devices")
+	#	self.convertXmlFileToJson("Events")
+	#	self.convertXmlFileToJson("MenuItems")
+	#	self.convertXmlFileToJson("PluginConfig")
+	#
+	# Which will result in the .json versions of the XML files all being saved.
+	#
+	def convertXmlFileToJson(self, basename):
+		if basename.endswith('.xml'):
+			basename = basename[:-4]
+		if not self._xmlOrJsonFileExist(basename):
+			print("File not found: %s" % (basename))
+			return
+		(xmlElemTree, filename) = self._xmlOrJsonParse(basename)
+
+		# We only read (and thus write here) JSON using the badgerfish convention,
+		# which states that attributes are prefixed with "@" into properties and
+		# the text content of elements is stored into a property named "$".
+		pyElemTree = badgerfish.data(xmlElemTree)
+		jsonRaw = json.dumps(pyElemTree, indent=4)
+		jsonFilename = basename + ".json"
+
+		f = file(jsonFilename, 'w')
+		f.write(jsonRaw)
+		f.close()
+		print("File converted and saved to: %s" % (jsonFilename))
+		print("Note for the .json version of the file to be used the .xml version must be renamed or deleted.")
 
 	###################
-	# TODO: @staticMethod?
 	def _getDeviceStateDictForType(self, type, stateId, triggerLabel, controlPageLabel, disabled=False):
 		stateDict = indigo.Dict()
 		stateDict[u"Type"] = int(type)
@@ -340,6 +683,7 @@ class PluginBase(object):
 
 	def getDeviceStateDictForSeparator(self, stateId):
 		return self._getDeviceStateDictForType(indigo.kTriggerKeyType.Label, stateId, u"_Separator", u"_Separator", True)
+
 	def getDeviceStateDictForSeperator(self, stateId):
 		return self.getDeviceStateDictForSeparator(stateId)
 
@@ -373,127 +717,110 @@ class PluginBase(object):
 		return stateDict
 
 	def _parseDevicesXML(self, filename):
-		if not os.path.isfile(filename):
+		if not self._xmlOrJsonFileExist(filename):
 			return
-		try:
-			dom = xml.dom.minidom.parseString(self._getXmlFromFile(filename))
-		except Exception, e:
-			self.errorLog(filename + u" has an error: %s" % str(e))
-			raise LookupError(filename + u" is malformed")
-
-		# Now get all devices from the <Devices> element
-		devicesElement = self._getChildElementsByTagName(dom, u"Devices")
-		if len(devicesElement) != 1:
-			raise LookupError(u"Incorrect number of <Devices> elements found")
+		(devicesTree, filename) = self._xmlOrJsonParse(filename)
+		if devicesTree.tag != "Devices":
+			raise LookupError(u"Incorrect number of <Devices> elements found in file %s" % (filename))
 
 		# Look for a DeviceFactory element - that will be used to create devices
 		# rather than creating them directly using the <Device> XML. This allows
 		# a plugin to discover device types rather than forcing the user to select
 		# the type up-front (like how INSTEON devices are added).
-		deviceFactoryElements = self._getChildElementsByTagName(devicesElement[0], u"DeviceFactory")
-		if len(deviceFactoryElements) > 1:
-			raise LookupError(u"Incorrect number of <DeviceFactory> elements found")
-		elif len(deviceFactoryElements) == 1:
-			deviceFactory = deviceFactoryElements[0]
-			elems = self._getChildElementsByTagName(deviceFactory, u"Name")
-			if len(elems) != 1:
-				raise LookupError(u"<DeviceFactory> element must contain exactly one <Name> element")
-			elems = self._getChildElementsByTagName(deviceFactory, u"ButtonTitle")
-			if len(elems) != 1:
-				raise LookupError(u"<DeviceFactory> element must contain exactly one <ButtonTitle> element")
-			elems = self._getChildElementsByTagName(deviceFactory, u"ConfigUI")
-			if len(elems) != 1:
-				raise LookupError(u"<DeviceFactory> element must contain exactly one <ConfigUI> element")
-			self.deviceFactoryXml = deviceFactory.toxml()
-		else:
-			self.deviceFactoryXml = None
+		self.deviceFactoryXml = None
+		deviceFactory = self._getChildSingleElementByTagName2(devicesTree, u"DeviceFactory", required=False, filename=filename)
+		if deviceFactory is not None:
+			# Test to make sure Name, ButtonTitle, and ConfigUI all exist:
+			nameElem = self._getChildSingleElementByTagName2(deviceFactory, u"Name", required=True, filename=filename)
+			buttonElem = self._getChildSingleElementByTagName2(deviceFactory, u"ButtonTitle", required=True, filename=filename)
+			configElem = self._getChildSingleElementByTagName2(deviceFactory, u"ConfigUI", required=True, filename=filename)
+			if configElem is not None:
+				replaceIndex = list(deviceFactory).index(configElem)
+				deviceFactory.remove(configElem)
+				deviceFactory.insert(replaceIndex, self._parseConfigUINode(configElem, filename=filename, returnXml=False))
+			self.deviceFactoryXml = xmlTree.tostring(deviceFactory, encoding="UTF-8", method="xml")
 
 		sortIndex = 0
-		deviceElemList = self._getChildElementsByTagName(devicesElement[0], u"Device")
+		deviceElemList = self._getChildElementsByTagName2(devicesTree, u"Device")
 		for device in deviceElemList:
-			serverVers = self._getElementAttribute(device, u"_minServerVers", required=False, errorIfNotAscii=False)
+			serverVers = self._getElementAttribute2(device, u"_minServerVers", required=False, errorIfNotAscii=False, filename=filename)
 			if serverVers is not None and not PluginBase.serverVersCompatWith(serverVers):
 				continue	# This version of Indigo Server isn't compatible with this object (skip it)
 
 			deviceDict = indigo.Dict()
-			deviceTypeId = self._getElementAttribute(device, u"id")
+			deviceTypeId = self._getElementAttribute2(device, u"id", filename=filename)
 			if deviceTypeId in self.devicesTypeDict:
-				raise LookupError(u"Duplicate device type id found: " + deviceTypeId)
-			deviceDict[u"Type"] = self._getElementAttribute(device, u"type")
+				raise LookupError(u"Duplicate device type id (%s) found in file %s" % (deviceTypeId, filename))
+			deviceDict[u"Type"] = self._getElementAttribute2(device, u"type", filename=filename)
 			if deviceDict[u"Type"] not in validDeviceTypes:
-				raise LookupError(u"Unknown device type in Devices.xml")
-			deviceDict[u"Name"] = self._getElementValueByTagName(device, u"Name")
-			deviceDict[u"DisplayStateId"] = self._getElementValueByTagName(device, u"UiDisplayStateId", required=False, default=u"")
+				raise LookupError(u"Unknown device type in file %s" % (filename))
+			deviceDict[u"Name"] = self._getElementValueByTagName2(device, u"Name", filename=filename)
+			deviceDict[u"DisplayStateId"] = self._getElementValueByTagName2(device, u"UiDisplayStateId", required=False, default=u"", filename=filename)
 			deviceDict[u"SortOrder"] = sortIndex
 			sortIndex += 1
 
-			configUIList = self._getChildElementsByTagName(device, u"ConfigUI")
-			if len(configUIList) > 0:
-				deviceDict[u"ConfigUIRawXml"] = self._parseConfigUINode(dom, configUIList[0]).toxml()
+			configUi = self._getChildSingleElementByTagName2(device, u"ConfigUI", required=False, filename=filename)
+			if configUi is not None:
+				deviceDict[u"ConfigUIRawXml"] = self._parseConfigUINode(configUi, filename=filename)
 
-			deviceStatesElementList = self._getChildElementsByTagName(device, u"States")
 			statesList = indigo.List()
-			if len(deviceStatesElementList) > 1:
-				raise LookupError(u"Incorrect number of <States> elements found")
-			elif len(deviceStatesElementList) == 1:
-				deviceStateElements = self._getChildElementsByTagName(deviceStatesElementList[0], u"State")
+			deviceStateList = self._getChildSingleElementByTagName2(device, u"States", required=False, filename=filename)
+			if deviceStateList is not None:
+				deviceStateElements = self._getChildElementsByTagName2(deviceStateList, u"State")
 				for state in deviceStateElements:
-					stateId = self._getElementAttribute(state, u"id")
-					triggerLabel = self._getElementValueByTagName(state, u"TriggerLabel", required=False, default=u"")
-					controlPageLabel = self._getElementValueByTagName(state, u"ControlPageLabel", required=False, default=u"")
+					stateId = self._getElementAttribute2(state, u"id", filename=filename)
+					triggerLabel = self._getElementValueByTagName2(state, u"TriggerLabel", required=False, default=u"", filename=filename)
+					controlPageLabel = self._getElementValueByTagName2(state, u"ControlPageLabel", required=False, default=u"", filename=filename)
 
 					disabled = False	# ToDo: need to read this?
-					stateValueTypes = self._getChildElementsByTagName(state, u"ValueType")
-					if len(stateValueTypes) != 1:
-						raise LookupError(u"<State> elements must have exactly one <ValueType> element")
-
-					valueListElements = self._getChildElementsByTagName(stateValueTypes[0], u"List")
-					if len(valueListElements) > 1:
-						raise LookupError(u"<ValueType> elements must have zero or one <List> element")
-					elif len(valueListElements) == 1:
+					stateValueType = self._getChildSingleElementByTagName2(state, u"ValueType", required=True, filename=filename)
+					stateValueList = self._getChildSingleElementByTagName2(stateValueType, u"List", required=False, filename=filename)
+					if stateValueList is not None:
 						# It must have a TriggerLabel and a ControlPageLabel
 						if (triggerLabel == "") or (controlPageLabel == ""):
-							raise LookupError(u"State elements must have both a TriggerLabel and a ControlPageLabel")
+							raise LookupError(u"State elements must have both a TriggerLabel and a ControlPageLabel in file %s" % (filename))
 						# It's an enumeration -- add an enum type for triggering off of any changes
 						# to this enumeration type:
 						stateDict = self.getDeviceStateDictForEnumType(stateId, triggerLabel, controlPageLabel, disabled)
 						statesList.append(stateDict)
 
 						# And add individual true/false types for triggering off every enumeration
-						# value possibility (as specified by the Option list):
-						triggerLabelPrefix = self._getElementValueByTagName(state, u"TriggerLabelPrefix", required=False, default=u"")
-						controlPageLabelPrefix = self._getElementValueByTagName(state, u"ControlPageLabelPrefix", required=False, default=u"")
+						# value possiblity (as specified by the Option list):
+						triggerLabelPrefix = self._getElementValueByTagName2(state, u"TriggerLabelPrefix", required=False, default=u"", filename=filename)
+						controlPageLabelPrefix = self._getElementValueByTagName2(state, u"ControlPageLabelPrefix", required=False, default=u"", filename=filename)
 
-						valueOptions = self._getChildElementsByTagName(valueListElements[0], u"Option")
+						valueOptions = self._getChildElementsByTagName2(stateValueList, u"Option")
 						if len(valueOptions) < 1:
-							raise LookupError(u"<List> elements must have at least one <Option> element")
+							raise LookupError(u"<List> elements must have at least one <Option> element in file %s" % (filename))
 						for option in valueOptions:
-							subStateId = stateId + u"." + self._getElementAttribute(option, u"value")
+							if option.text is None:
+								continue
+							subStateId = stateId + u"." + self._getElementAttribute2(option, u"value", filename=filename)
 
 							if len(triggerLabelPrefix) > 0:
-								subTriggerLabel = triggerLabelPrefix + u" " + option.firstChild.data
+								subTriggerLabel = triggerLabelPrefix + u" " + option.text
 							else:
-								subTriggerLabel = option.firstChild.data
+								subTriggerLabel = option.text
 
 							if len(controlPageLabelPrefix) > 0:
-								subControlPageLabel = controlPageLabelPrefix + u" " + option.firstChild.data
+								subControlPageLabel = controlPageLabelPrefix + u" " + option.text
 							else:
-								subControlPageLabel = option.firstChild.data
+								subControlPageLabel = option.text
 
-							subDisabled = False	# ToDo: need to read this?
-
+							subDisabled = False		# ToDo: need to read this?
 							subStateDict = self.getDeviceStateDictForBoolTrueFalseType(subStateId, subTriggerLabel, subControlPageLabel, subDisabled)
 							statesList.append(subStateDict)
-					else:
+					elif stateValueType.text is not None:
 						# It's not an enumeration
 						stateDict = None
-						valueType = stateValueTypes[0].firstChild.data.lower()
+						valueType = stateValueType.text.lower()
 						# It must have a TriggerLabel and a ControlPageLabel if it's not a separator
 						if (valueType != u"separator"):
 							if (triggerLabel == "") or (controlPageLabel == ""):
-								raise LookupError(u"State elements must have both a TriggerLabel and a ControlPageLabel")
+								raise LookupError(u"State elements must have both a TriggerLabel and a ControlPageLabel in file %s" % (filename))
 						if valueType == u"boolean":
-							boolType = stateValueTypes[0].getAttribute(u"boolType").lower()
+							boolType = stateValueType.get("boolType")
+							boolType = boolType.lower() if boolType is not None else u""
 							if boolType == u"onoff":
 								stateDict = self.getDeviceStateDictForBoolOnOffType(stateId, triggerLabel, controlPageLabel, disabled)
 							elif boolType == u"yesno":
@@ -511,102 +838,95 @@ class PluginBase(object):
 
 						if stateDict:
 							statesList.append(stateDict)
+					else:
+						raise LookupError(u"State elements <ValueType> empty in file %s" % (filename))
 			deviceDict[u"States"] = statesList
 
 			self.devicesTypeDict[deviceTypeId] = deviceDict
 
 	###################
 	def _parseEventsXML(self, filename):
-		if not os.path.isfile(filename):
+		if not self._xmlOrJsonFileExist(filename):
 			return
-		try:
-			dom = xml.dom.minidom.parseString(self._getXmlFromFile(filename))
-		except:
-			raise LookupError(filename + u" is malformed")
-		eventsElement = self._getChildElementsByTagName(dom, u"Events")
-		if len(eventsElement) != 1:
-			raise LookupError(u"Incorrect number of <Events> elements found")
+		(eventsTree, filename) = self._xmlOrJsonParse(filename)
+		if eventsTree.tag != "Events":
+			raise LookupError(u"Incorrect number of <Events> elements found in file %s" % (filename))
 
 		sortIndex = 0
-		eventElemList = self._getChildElementsByTagName(eventsElement[0], u"Event")
+		eventElemList = self._getChildElementsByTagName2(eventsTree, u"Event")
 		for event in eventElemList:
-			serverVers = self._getElementAttribute(event, u"_minServerVers", required=False, errorIfNotAscii=False)
+			serverVers = self._getElementAttribute2(event, u"_minServerVers", required=False, errorIfNotAscii=False, filename=filename)
 			if serverVers is not None and not PluginBase.serverVersCompatWith(serverVers):
 				continue	# This version of Indigo Server isn't compatible with this object (skip it)
 
 			eventDict = indigo.Dict()
-			eventTypeId = self._getElementAttribute(event, u"id")
+			eventTypeId = self._getElementAttribute2(event, u"id", filename=filename)
 			if eventTypeId in self.eventsTypeDict:
-				raise LookupError(u"Duplicate event type id found: " + eventTypeId)
+				raise LookupError(u"Duplicate event type id (%s) found in file %s" % (eventTypeId, filename))
 			try:
-				eventDict[u"Name"] = self._getElementValueByTagName(event, u"Name")
+				eventDict[u"Name"] = self._getElementValueByTagName2(event, u"Name", filename=filename)
 			except ValueError:
 				# It's missing <Name> so treat it as a separator
 				eventDict[u"Name"] = u" - "
 			eventDict[u"SortOrder"] = sortIndex
 			sortIndex += 1
 
-			configUIList = self._getChildElementsByTagName(event, u"ConfigUI")
-			if len(configUIList) > 0:
-				eventDict[u"ConfigUIRawXml"] = self._parseConfigUINode(dom, configUIList[0]).toxml()
+			configUi = self._getChildSingleElementByTagName2(event, u"ConfigUI", required=False, filename=filename)
+			if configUi is not None:
+				eventDict[u"ConfigUIRawXml"] = self._parseConfigUINode(configUi, filename=filename)
 
 			self.eventsTypeDict[eventTypeId] = eventDict
 
 	###################
 	def _parseActionsXML(self, filename):
-		if not os.path.isfile(filename):
+		if not self._xmlOrJsonFileExist(filename):
 			return
-		try:
-			dom = xml.dom.minidom.parseString(self._getXmlFromFile(filename))
-		except:
-			raise LookupError(filename + u" is malformed")
-		actionsElement = self._getChildElementsByTagName(dom, u"Actions")
-		if len(actionsElement) != 1:
-			raise LookupError(u"Incorrect number of <Actions> elements found")
+		(actionsTree, filename) = self._xmlOrJsonParse(filename)
+		if actionsTree.tag != "Actions":
+			raise LookupError(u"Incorrect number of <Actions> elements found in file %s" % (filename))
 
 		sortIndex = 0
-		actionElemList = self._getChildElementsByTagName(actionsElement[0], u"Action")
+		actionElemList = self._getChildElementsByTagName2(actionsTree, u"Action")
 		for action in actionElemList:
-			serverVers = self._getElementAttribute(action, u"_minServerVers", required=False, errorIfNotAscii=False)
+			serverVers = self._getElementAttribute2(action, u"_minServerVers", required=False, errorIfNotAscii=False, filename=filename)
 			if serverVers is not None and not PluginBase.serverVersCompatWith(serverVers):
 				continue	# This version of Indigo Server isn't compatible with this object (skip it)
 
 			actionDict = indigo.Dict()
-			actionTypeId = self._getElementAttribute(action, u"id")
+			actionTypeId = self._getElementAttribute2(action, u"id", filename=filename)
 			if actionTypeId in self.actionsTypeDict:
-				raise LookupError(u"Duplicate action type id found: " + actionTypeId)
+				raise LookupError(u"Duplicate action type id (%s) found in file %s" % (actionTypeId, filename))
+
 			try:
-				actionDict[u"Name"] = self._getElementValueByTagName(action, u"Name")
-				actionDict[u"CallbackMethod"] = self._getElementValueByTagName(action, u"CallbackMethod")
-				actionDict[u"DeviceFilter"] = self._getElementAttribute(action, u"deviceFilter", False, u"")
+				actionDict[u"Name"] = self._getElementValueByTagName2(action, u"Name", filename=filename)
+				actionDict[u"CallbackMethod"] = self._getElementValueByTagName2(action, u"CallbackMethod", required=False, default=u"", filename=filename)
+				actionDict[u"DeviceFilter"] = self._getElementAttribute2(action, u"deviceFilter", required=False, default=u"", filename=filename)
 			except ValueError:
-				# It's missing <Name> or <CallbackMethod> so treat it as a separator
+				# It's missing <Name> so treat it as a separator
 				actionDict[u"Name"] = u" - "
 				actionDict[u"CallbackMethod"] = u""
 				actionDict[u"DeviceFilter"] = u""
-			actionDict[u"UiPath"] = self._getElementAttribute(action, u"uiPath", required=False)
-			actionDict[u"PrivateUiPath"] = self._getElementAttribute(action, u"privateUiPath", required=False)
+			actionDict[u"UiPath"] = self._getElementAttribute2(action, u"uiPath", required=False, filename=filename)
+			actionDict[u"PrivateUiPath"] = self._getElementAttribute2(action, u"privateUiPath", required=False, filename=filename)
 			actionDict[u"SortOrder"] = sortIndex
 			sortIndex += 1
 
-			configUIList = self._getChildElementsByTagName(action, u"ConfigUI")
-			if len(configUIList) > 0:
-				actionDict[u"ConfigUIRawXml"] = self._parseConfigUINode(dom, configUIList[0]).toxml()
+			configUi = self._getChildSingleElementByTagName2(action, u"ConfigUI", required=False, filename=filename)
+			if configUi is not None:
+				actionDict[u"ConfigUIRawXml"] = self._parseConfigUINode(configUi, filename=filename)
 
 			self.actionsTypeDict[actionTypeId] = actionDict
 
 	################################################################################
 	########################################
-	# TODO: @staticMethod?
 	def doesPrefsConfigUiExist(self):
-		return os.path.isfile('PluginConfig.xml')
+		return self._xmlOrJsonFileExist(kPluginConfigFilename)
 
 	def getPrefsConfigUiXml(self):
-		dom = xml.dom.minidom.parseString(self._getXmlFromFile('PluginConfig.xml'))
-		configUIList = self._getChildElementsByTagName(dom, u"PluginConfig")
-		if len(configUIList) != 1:
-			raise LookupError(u"PluginConfig.xml file must have one root level <PluginConfig> node")
-		return self._parseConfigUINode(dom, configUIList[0]).toxml()
+		(configUiTree, filename) = self._xmlOrJsonParse(kPluginConfigFilename)
+		if configUiTree.tag != "PluginConfig":
+			raise LookupError(u"%s file must have one root level <PluginConfig> node" % (filename))
+		return self._parseConfigUINode(configUiTree, filename=filename)
 
 	def getPrefsConfigUiValues(self):
 		valuesDict = self.pluginPrefs
@@ -623,14 +943,17 @@ class PluginBase(object):
 	def closedPrefsConfigUi(self, valuesDict, userCancelled):
 		return
 
+	def savePluginPrefs(self):
+		indigo.server.savePluginPrefs()
+
 	########################################
 	def getMenuItemsList(self):
 		return self.menuItemsList
 
 	def getMenuActionConfigUiXml(self, menuId):
 		if menuId in self.menuItemsDict:
-			rawXML = self.menuItemsDict[menuId][u"ConfigUIRawXml"]
-			return rawXML
+			xmlRaw = self.menuItemsDict[menuId][u"ConfigUIRawXml"]
+			return xmlRaw
 		return None
 
 	def getMenuActionConfigUiValues(self, menuId):
@@ -770,9 +1093,9 @@ class PluginBase(object):
 				try:
 					self.deviceStartComm(elem)
 				except Exception, e:
-					self.errorLog(u"exception in deviceStartComm(%s): %s" % (elem.name, str(e)))
+					self.logger.error(u"exception in deviceStartComm(%s): %s" % (elem.name, unicode(e)))
 				except:
-					self.errorLog(u"exception in deviceStartComm(%s)" % (elem.name,))
+					self.logger.error(u"exception in deviceStartComm(%s)" % (elem.name,))
 
 	def _deviceEnumAndStopComm(self):
 		for elem in indigo.devices.iter(self.pluginId):
@@ -780,9 +1103,9 @@ class PluginBase(object):
 				try:
 					self.deviceStopComm(elem)
 				except Exception, e:
-					self.errorLog(u"exception in deviceStopComm(%s): %s" % (elem.name, str(e)))
+					self.logger.error(u"exception in deviceStopComm(%s): %s" % (elem.name, unicode(e)))
 				except:
-					self.errorLog(u"exception in deviceStopComm(%s)" % (elem.name,))
+					self.logger.error(u"exception in deviceStopComm(%s)" % (elem.name,))
 
 	def didDeviceCommPropertyChange(self, origDev, newDev):
 		# Return True if a plugin related property changed from
@@ -797,15 +1120,15 @@ class PluginBase(object):
 		return False
 
 	def deviceStartComm(self, dev):
-		# self.debugLog(u"deviceStartComm: " + dev.name)
+		# self.logger.debug(u"deviceStartComm: " + dev.name)
 		pass
 
 	def deviceStopComm(self, dev):
-		# self.debugLog(u"deviceStopComm: " + dev.name)
+		# self.logger.debug(u"deviceStopComm: " + dev.name)
 		pass
 
 	def deviceCreated(self, dev):
-		# self.debugLog(u"deviceCreated: \n" + str(dev))
+		# self.logger.debug(u"deviceCreated: \n" + unicode(dev))
 		if dev.pluginId != self.pluginId:
 			return		# device is not plugin based -- bail out
 
@@ -813,7 +1136,7 @@ class PluginBase(object):
 			self.deviceStartComm(dev)
 
 	def deviceDeleted(self, dev):
-		# self.debugLog(u"deviceDeleted: \n" + str(dev))
+		# self.logger.debug(u"deviceDeleted: \n" + unicode(dev))
 		if dev.pluginId != self.pluginId:
 			return		# device is not plugin based -- bail out
 
@@ -821,8 +1144,8 @@ class PluginBase(object):
 			self.deviceStopComm(dev)
 
 	def deviceUpdated(self, origDev, newDev):
-		# self.debugLog(u"deviceUpdated orig: \n" + str(origDev))
-		# self.debugLog(u"deviceUpdated new: \n" + str(newDev))
+		# self.logger.debug(u"deviceUpdated orig: \n" + unicode(origDev))
+		# self.logger.debug(u"deviceUpdated new: \n" + unicode(newDev))
 		origDevPluginId = origDev.pluginId
 		newDevPluginId = newDev.pluginId
 		if origDevPluginId != self.pluginId and newDevPluginId != self.pluginId:
@@ -872,9 +1195,9 @@ class PluginBase(object):
 				try:
 					self.triggerStartProcessing(elem)
 				except Exception, e:
-					self.errorLog(u"exception in triggerStartProcessing(%s): %s" % (elem.name, str(e)))
+					self.logger.error(u"exception in triggerStartProcessing(%s): %s" % (elem.name, unicode(e)))
 				except:
-					self.errorLog(u"exception in triggerStartProcessing(%s)" % (elem.name,))
+					self.logger.error(u"exception in triggerStartProcessing(%s)" % (elem.name,))
 
 	def _triggerEnumAndStopProcessing(self):
 		for elem in indigo.triggers.iter(self.pluginId):
@@ -882,9 +1205,9 @@ class PluginBase(object):
 				try:
 					self.triggerStopProcessing(elem)
 				except Exception, e:
-					self.errorLog(u"exception in triggerStopProcessing(%s): %s" % (elem.name, str(e)))
+					self.logger.error(u"exception in triggerStopProcessing(%s): %s" % (elem.name, unicode(e)))
 				except:
-					self.errorLog(u"exception in triggerStopProcessing(%s)" % (elem.name,))
+					self.logger.error(u"exception in triggerStopProcessing(%s)" % (elem.name,))
 
 	def didTriggerProcessingPropertyChange(self, origTrigger, newTrigger):
 		# Return True if a plugin related property changed from
@@ -899,15 +1222,15 @@ class PluginBase(object):
 		return False
 
 	def triggerStartProcessing(self, trigger):
-		# self.debugLog(u"triggerStartProcessing: " + trigger.name)
+		# self.logger.debug(u"triggerStartProcessing: " + trigger.name)
 		pass
 
 	def triggerStopProcessing(self, trigger):
-		# self.debugLog(u"triggerStopProcessing: " + trigger.name)
+		# self.logger.debug(u"triggerStopProcessing: " + trigger.name)
 		pass
 
 	def triggerCreated(self, trigger):
-		# self.debugLog(u"triggerCreated: \n" + str(trigger))
+		# self.logger.debug(u"triggerCreated: \n" + unicode(trigger))
 		if self._triggerGetPluginId(trigger) != self.pluginId:
 			return		# trigger is not plugin based -- bail out
 
@@ -915,7 +1238,7 @@ class PluginBase(object):
 			self.triggerStartProcessing(trigger)
 
 	def triggerDeleted(self, trigger):
-		# self.debugLog(u"triggerDeleted: \n" + str(trigger))
+		# self.logger.debug(u"triggerDeleted: \n" + unicode(trigger))
 		if self._triggerGetPluginId(trigger) != self.pluginId:
 			return		# trigger is not plugin based -- bail out
 
@@ -923,8 +1246,8 @@ class PluginBase(object):
 			self.triggerStopProcessing(trigger)
 
 	def triggerUpdated(self, origTrigger, newTrigger):
-		# self.debugLog(u"triggerUpdated orig: \n" + str(origTrigger))
-		# self.debugLog(u"triggerUpdated new: \n" + str(newTrigger))
+		# self.logger.debug(u"triggerUpdated orig: \n" + unicode(origTrigger))
+		# self.logger.debug(u"triggerUpdated new: \n" + unicode(newTrigger))
 		origTriggerPluginId = self._triggerGetPluginId(origTrigger)
 		newTriggerPluginId = self._triggerGetPluginId(newTrigger)
 		if origTriggerPluginId != self.pluginId and newTriggerPluginId != self.pluginId:
@@ -959,64 +1282,64 @@ class PluginBase(object):
 
 	########################################
 	def scheduleCreated(self, schedule):
-		# self.debugLog(u"scheduleCreated: \n" + str(schedule))
+		# self.logger.debug(u"scheduleCreated: \n" + unicode(schedule))
 		pass
 
 	def scheduleDeleted(self, schedule):
-		# self.debugLog(u"scheduleDeleted: \n" + str(schedule))
+		# self.logger.debug(u"scheduleDeleted: \n" + unicode(schedule))
 		pass
 
 	def scheduleUpdated(self, origSchedule, newSchedule):
-		# self.debugLog(u"scheduleUpdated orig: \n" + str(origSchedule))
-		# self.debugLog(u"scheduleUpdated new: \n" + str(newSchedule))
+		# self.logger.debug(u"scheduleUpdated orig: \n" + unicode(origSchedule))
+		# self.logger.debug(u"scheduleUpdated new: \n" + unicode(newSchedule))
 		pass
 
 	########################################
 	def actionGroupCreated(self, group):
-		# self.debugLog(u"actionGroupCreated: \n" + str(group))
+		# self.logger.debug(u"actionGroupCreated: \n" + unicode(group))
 		pass
 
 	def actionGroupDeleted(self, group):
-		# self.debugLog(u"actionGroupDeleted: \n" + str(group))
+		# self.logger.debug(u"actionGroupDeleted: \n" + unicode(group))
 		pass
 
 	def actionGroupUpdated(self, origGroup, newGroup):
-		# self.debugLog(u"actionGroupUpdated orig: \n" + str(origGroup))
-		# self.debugLog(u"actionGroupUpdated new: \n" + str(newGroup))
+		# self.logger.debug(u"actionGroupUpdated orig: \n" + unicode(origGroup))
+		# self.logger.debug(u"actionGroupUpdated new: \n" + unicode(newGroup))
 		pass
 
 	########################################
 	def controlPageCreated(self, page):
-		# self.debugLog(u"controlPageCreated: \n" + str(page))
+		# self.logger.debug(u"controlPageCreated: \n" + unicode(page))
 		pass
 
 	def controlPageDeleted(self, page):
-		# self.debugLog(u"controlPageDeleted: \n" + str(page))
+		# self.logger.debug(u"controlPageDeleted: \n" + unicode(page))
 		pass
 
 	def controlPageUpdated(self, origPage, newPage):
-		# self.debugLog(u"controlPageUpdated orig: \n" + str(origPage))
-		# self.debugLog(u"controlPageUpdated new: \n" + str(newPage))
+		# self.logger.debug(u"controlPageUpdated orig: \n" + unicode(origPage))
+		# self.logger.debug(u"controlPageUpdated new: \n" + unicode(newPage))
 		pass
 
 	########################################
 	def variableCreated(self, var):
-		# self.debugLog(u"variableCreated: \n" + str(var))
+		# self.logger.debug(u"variableCreated: \n" + unicode(var))
 		pass
 
 	def variableDeleted(self, var):
-		# self.debugLog(u"variableDeleted: \n" + str(var))
+		# self.logger.debug(u"variableDeleted: \n" + unicode(var))
 		pass
 
 	def variableUpdated(self, origVar, newVar):
-		# self.debugLog(u"variableUpdated orig: \n" + str(origVar))
-		# self.debugLog(u"variableUpdated new: \n" + str(newVar))
+		# self.logger.debug(u"variableUpdated orig: \n" + unicode(origVar))
+		# self.logger.debug(u"variableUpdated new: \n" + unicode(newVar))
 		pass
 
 	################################################################################
 	########################################
 	def applicationWithBundleIdentifier(self, bundleID):
-		from ScriptingBridge import SBApplication  # TODO: SBApplicatiion reference not found
+		from ScriptingBridge import SBApplication
 		return SBApplication.applicationWithBundleIdentifier_(bundleID)
 
 	########################################
@@ -1031,7 +1354,7 @@ class PluginBase(object):
 			theVarValue = indigo.variables[int(matchobj.group(1))].value
 		except:
 			theVarValue = ""
-			self.errorLog(u"Variable id " + matchobj.group(1) + u" not found for substitution")
+			self.logger.error(u"Variable id " + matchobj.group(1) + u" not found for substitution")
 		return theVarValue
 
 	###################
@@ -1064,14 +1387,14 @@ class PluginBase(object):
 			p = re.compile("\%%v:([0-9]*)%%")
 			newString = p.sub(self._insertVariableValue, inString)
 			return newString
-	
+
 	########################################
 	def _insertStateValue(self, matchobj):
 		try:
 			theStateValue = unicode(indigo.devices[int(matchobj.group(1))].states[matchobj.group(2)])
 		except:
 			theStateValue = ""
-			self.errorLog(u"Device id " + matchobj.group(1) + u" or state id " + matchobj.group(2) + u" not found for substitution")
+			self.logger.error(u"Device id " + matchobj.group(1) + u" or state id " + matchobj.group(2) + u" not found for substitution")
 		return theStateValue
 
 	###################
@@ -1094,7 +1417,7 @@ class PluginBase(object):
 							if theDevice is None:
 								validated = False
 							else:
-								stateValue = theDevice.states[devStateName]  # TODO: Unless I'm mistaken, you can't get here.  Syntax checkng is calling this a new local variable.
+								stateValue = theDevice.states[devStateName]
 						except:
 							validated = False
 					else:
@@ -1105,7 +1428,7 @@ class PluginBase(object):
 			else:
 				return (validated, u"Either a device ID or state doesn't exist or there's a substitution format error")
 		else:
-			p = re.compile("\%%d:([0-9]*):([A-z0-9]*)%%")
+			p = re.compile("\%%d:([0-9]*):([A-z0-9\.]*)%%")
 			newString = p.sub(self._insertStateValue, inString)
 			return newString
 
@@ -1202,11 +1525,11 @@ class PluginBase(object):
 		except:
 			return u""
 
-	# Call through to pySerial's .Serial() constructor, but handle error exceptions by
+	# Call through to pySerial's .Serial() contructor, but handle error exceptions by
 	# logging them and returning None. No exceptions will be raised.
 	def openSerial(self, ownerName, portUrl, baudrate, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=None, xonxoff=False, rtscts=False, writeTimeout=None, dsrdtr=False, interCharTimeout=None, errorLogFunc=None):
 		if errorLogFunc is None:
-			errorLogFunc = self.errorLog
+			errorLogFunc = self.logger.error
 
 		if not isinstance(portUrl, (str, unicode)) or len(portUrl) == 0:
 			errorLogFunc(u"valid serial port not selected for \"%s\"" % (ownerName,))
@@ -1216,8 +1539,8 @@ class PluginBase(object):
 			return serial.serial_for_url(portUrl, baudrate=baudrate, bytesize=bytesize, parity=parity, stopbits=stopbits, timeout=timeout, xonxoff=xonxoff, rtscts=rtscts, writeTimeout=writeTimeout, dsrdtr=dsrdtr, interCharTimeout=interCharTimeout)
 		except Exception, exc:
 			portUrl_lower = portUrl.lower()
-			errorLogFunc(u"\"%s\" serial port open error: %s" % (ownerName, str(exc)))
-			if "no 35" in str(exc):
+			errorLogFunc(u"\"%s\" serial port open error: %s" % (ownerName, unicode(exc)))
+			if u"no 35" in unicode(exc):
 				errorLogFunc(u"the specified serial port is used by another interface or device")
 			elif portUrl_lower.startswith('rfc2217://') or portUrl_lower.startswith('socket://'):
 				errorLogFunc(u"make sure remote serial server IP address and port number are correct")
